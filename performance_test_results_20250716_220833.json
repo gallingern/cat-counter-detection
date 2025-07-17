@@ -1,0 +1,733 @@
+{
+  "test_start_time": "2025-07-16T22:07:46.650615",
+  "system_info": {
+    "timestamp": "2025-07-16T22:07:46.650630",
+    "opencv_available": true,
+    "psutil_available": true,
+    "cpu_count": 8,
+    "memory_total_mb": 32768.0,
+    "disk_total_gb": 460.4317207336426,
+    "boot_time": "2025-06-26T21:18:08"
+  },
+  "baseline_performance": {
+    "baseline_cpu_percent": 21.660000000000004,
+    "baseline_memory_percent": 55.4,
+    "baseline_memory_available_mb": 14601.046875
+  },
+  "optimization_levels": {
+    "level_0": {
+      "level": 0,
+      "settings": {
+        "target_fps": 1.0,
+        "max_cpu_percent": 50.0,
+        "max_memory_percent": 70.0,
+        "frame_downsample_factor": 1.0,
+        "detection_skip_frames": 0,
+        "gc_frequency_frames": 100,
+        "enable_frame_caching": true,
+        "enable_roi_optimization": true
+      },
+      "performance_metrics": {
+        "cpu_percent": 17.5,
+        "memory_percent": 54.6,
+        "memory_available_mb": 14866.609375,
+        "temperature_celsius": null,
+        "fps": 0.0
+      },
+      "frame_processing_results": {
+        "total_frames_processed": 30,
+        "total_time": 0.006679534912109375,
+        "average_fps": 4491.330668189606,
+        "min_processing_time": 0.00010395050048828125,
+        "max_processing_time": 0.0014562606811523438,
+        "processing_times": [
+          0.0014562606811523438,
+          0.00024199485778808594,
+          0.00021886825561523438,
+          0.0001590251922607422,
+          0.00017118453979492188,
+          0.0001239776611328125,
+          0.00025081634521484375,
+          0.00010395050048828125,
+          0.0001399517059326172,
+          0.0001270771026611328,
+          0.0002529621124267578,
+          0.000141143798828125,
+          0.0001780986785888672,
+          0.00024175643920898438,
+          0.0001747608184814453,
+          0.00020503997802734375,
+          0.00018906593322753906,
+          0.0001900196075439453,
+          0.0002129077911376953,
+          0.00017690658569335938,
+          0.00017786026000976562,
+          0.00019216537475585938,
+          0.00022482872009277344,
+          0.0002040863037109375,
+          0.00015997886657714844,
+          0.00012111663818359375,
+          0.00013208389282226562,
+          0.00016379356384277344,
+          0.00014209747314453125,
+          0.00020575523376464844
+        ],
+        "average_processing_time": 0.00022265116373697917
+      }
+    },
+    "level_1": {
+      "level": 1,
+      "settings": {
+        "target_fps": 0.8,
+        "max_cpu_percent": 60.0,
+        "max_memory_percent": 75.0,
+        "frame_downsample_factor": 0.8,
+        "detection_skip_frames": 1,
+        "gc_frequency_frames": 50,
+        "enable_frame_caching": false,
+        "enable_roi_optimization": true
+      },
+      "performance_metrics": {
+        "cpu_percent": 17.1,
+        "memory_percent": 54.5,
+        "memory_available_mb": 14904.59375,
+        "temperature_celsius": null,
+        "fps": 0.0
+      },
+      "frame_processing_results": {
+        "total_frames_processed": 30,
+        "total_time": 0.007880449295043945,
+        "average_fps": 3806.889541040148,
+        "min_processing_time": 1.9073486328125e-06,
+        "max_processing_time": 0.0008289813995361328,
+        "processing_times": [
+          5.0067901611328125e-06,
+          0.0008289813995361328,
+          2.86102294921875e-06,
+          0.0006091594696044922,
+          2.1457672119140625e-06,
+          0.00047016143798828125,
+          1.9073486328125e-06,
+          0.0007650852203369141,
+          3.0994415283203125e-06,
+          0.0006642341613769531,
+          4.0531158447265625e-06,
+          0.0005588531494140625,
+          3.814697265625e-06,
+          0.0005521774291992188,
+          4.0531158447265625e-06,
+          0.00043272972106933594,
+          3.814697265625e-06,
+          0.00042128562927246094,
+          1.9073486328125e-06,
+          0.0004899501800537109,
+          3.0994415283203125e-06,
+          0.0004448890686035156,
+          3.814697265625e-06,
+          0.00043010711669921875,
+          4.0531158447265625e-06,
+          0.00039696693420410156,
+          1.9073486328125e-06,
+          0.00039005279541015625,
+          2.1457672119140625e-06,
+          0.0003781318664550781
+        ],
+        "average_processing_time": 0.0002626816431681315
+      }
+    },
+    "level_2": {
+      "level": 2,
+      "settings": {
+        "target_fps": 0.5,
+        "max_cpu_percent": 70.0,
+        "max_memory_percent": 80.0,
+        "frame_downsample_factor": 0.6,
+        "detection_skip_frames": 2,
+        "gc_frequency_frames": 25,
+        "enable_frame_caching": false,
+        "enable_roi_optimization": true
+      },
+      "performance_metrics": {
+        "cpu_percent": 18.5,
+        "memory_percent": 54.4,
+        "memory_available_mb": 14943.265625,
+        "temperature_celsius": null,
+        "fps": 0.0
+      },
+      "frame_processing_results": {
+        "total_frames_processed": 30,
+        "total_time": 0.004369974136352539,
+        "average_fps": 6865.029188717333,
+        "min_processing_time": 9.5367431640625e-07,
+        "max_processing_time": 0.0005109310150146484,
+        "processing_times": [
+          4.0531158447265625e-06,
+          1.9073486328125e-06,
+          0.0005109310150146484,
+          2.86102294921875e-06,
+          9.5367431640625e-07,
+          0.0004436969757080078,
+          5.0067901611328125e-06,
+          9.5367431640625e-07,
+          0.0005078315734863281,
+          3.0994415283203125e-06,
+          2.1457672119140625e-06,
+          0.00043702125549316406,
+          3.814697265625e-06,
+          1.9073486328125e-06,
+          0.0004413127899169922,
+          2.1457672119140625e-06,
+          2.1457672119140625e-06,
+          0.00042176246643066406,
+          2.1457672119140625e-06,
+          9.5367431640625e-07,
+          0.0004696846008300781,
+          1.9073486328125e-06,
+          1.9073486328125e-06,
+          0.0003840923309326172,
+          1.6689300537109375e-06,
+          1.1920928955078125e-06,
+          0.00035881996154785156,
+          2.1457672119140625e-06,
+          9.5367431640625e-07,
+          0.0003509521484375
+        ],
+        "average_processing_time": 0.00014566580454508464
+      }
+    }
+  },
+  "bottleneck_analysis": {
+    "initialization": {
+      "success": true,
+      "total_execution_time": 0.005454301834106445,
+      "analysis": {
+        "type": "BottleneckAnalysis",
+        "data": {
+          "timestamp": "2025-07-16T22:08:33.789270",
+          "total_execution_time": 0.00521121,
+          "top_bottlenecks": [
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "/Users/natebook/workspace/cat_counter_detection/performance_test.py:263(init_pipeline)",
+                "total_time": 1.4170000000000002e-06,
+                "cumulative_time": 0.005451958000000001,
+                "call_count": 1,
+                "time_per_call": 0.005451958000000001,
+                "percentage_of_total": 99.0559632349107
+              }
+            },
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "/Users/natebook/workspace/cat_counter_detection/detection_pipeline.py:317(_load_detection_model)",
+                "total_time": 8.334e-06,
+                "cumulative_time": 0.005450541000000001,
+                "call_count": 1,
+                "time_per_call": 0.005450541000000001,
+                "percentage_of_total": 99.03021793388235
+              }
+            },
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "/Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:51(load_model)",
+                "total_time": 2.0830000000000002e-06,
+                "cumulative_time": 0.005295541,
+                "call_count": 1,
+                "time_per_call": 0.005295541,
+                "percentage_of_total": 96.21404174517892
+              }
+            },
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "/Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:128(_try_builtin_cascade)",
+                "total_time": 0.005193209000000001,
+                "cumulative_time": 0.005268958000000001,
+                "call_count": 1,
+                "time_per_call": 0.005268958000000001,
+                "percentage_of_total": 95.73105844437698
+              }
+            },
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "/Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:109(set_roi)",
+                "total_time": 6.167e-06,
+                "cumulative_time": 8.3792e-05,
+                "call_count": 1,
+                "time_per_call": 8.3792e-05,
+                "percentage_of_total": 1.5224066787344357
+              }
+            },
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/genericpath.py:16(exists)",
+                "total_time": 3.7080000000000003e-06,
+                "cumulative_time": 5.6666e-05,
+                "call_count": 2,
+                "time_per_call": 2.8333e-05,
+                "percentage_of_total": 1.0295576768326993
+              }
+            }
+          ],
+          "recommendations": [
+            "High-impact function /Users/natebook/workspace/cat_counter_detection/performance_test.py:263(init_pipeline) consuming 99.1% of execution time. Consider optimizing this function or reducing call frequency.",
+            "I/O bottleneck detected in /Users/natebook/workspace/cat_counter_detection/detection_pipeline.py:317(_load_detection_model) (99.0% of time). Consider: asynchronous I/O, reducing file sizes, or batching operations.",
+            "I/O bottleneck detected in /Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:51(load_model) (96.2% of time). Consider: asynchronous I/O, reducing file sizes, or batching operations.",
+            "OpenCV bottleneck detected in /Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:128(_try_builtin_cascade) (95.7% of time). Consider: reducing image resolution, adjusting detection parameters, or using ROI to limit detection area."
+          ],
+          "profile_data": "         312 function calls in 0.006 seconds\n\n   Ordered by: cumulative time\n   List reduced from 58 to 20 due to restriction <20>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n        1    0.000    0.000    0.005    0.005 /Users/natebook/workspace/cat_counter_detection/performance_test.py:263(init_pipeline)\n        1    0.000    0.000    0.005    0.005 /Users/natebook/workspace/cat_counter_detection/detection_pipeline.py:317(_load_detection_model)\n        1    0.000    0.000    0.005    0.005 /Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:51(load_model)\n        1    0.005    0.005    0.005    0.005 /Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:128(_try_builtin_cascade)\n        5    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:1436(info)\n        5    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:1565(_log)\n        5    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:1591(handle)\n        5    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:1645(callHandlers)\n        5    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:939(handle)\n        5    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:1071(emit)\n        1    0.000    0.000    0.000    0.000 /Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:109(set_roi)\n        5    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:1550(makeRecord)\n        5    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:282(__init__)\n        2    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/genericpath.py:16(exists)\n        5    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:916(format)\n        2    0.000    0.000    0.000    0.000 {built-in method posix.stat}\n        5    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:650(format)\n        5    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:634(formatMessage)\n        5    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:432(format)\n        1    0.000    0.000    0.000    0.000 /Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:104(set_confidence_threshold)\n\n\n"
+        }
+      },
+      "result": true
+    },
+    "frame_processing": {
+      "success": true,
+      "total_execution_time": 0.11850094795227051,
+      "analysis": {
+        "type": "BottleneckAnalysis",
+        "data": {
+          "timestamp": "2025-07-16T22:08:33.908330",
+          "total_execution_time": 0.11529979700000001,
+          "top_bottlenecks": [
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "/Users/natebook/workspace/cat_counter_detection/performance_test.py:271(process_test_frames)",
+                "total_time": 3.332e-06,
+                "cumulative_time": 0.11849833300000001,
+                "call_count": 1,
+                "time_per_call": 0.11849833300000001,
+                "percentage_of_total": 99.96284704098429
+              }
+            },
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "/Users/natebook/workspace/cat_counter_detection/detection_pipeline.py:167(_process_frame)",
+                "total_time": 3.5253e-05,
+                "cumulative_time": 0.118495001,
+                "call_count": 3,
+                "time_per_call": 0.03949833366666667,
+                "percentage_of_total": 99.96003623176944
+              }
+            },
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "/Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:72(detect_cats)",
+                "total_time": 4.9963e-05,
+                "cumulative_time": 0.118440708,
+                "call_count": 3,
+                "time_per_call": 0.039480236,
+                "percentage_of_total": 99.91423573215907
+              }
+            },
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "/Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:195(_detect_with_haar_cascade)",
+                "total_time": 2.2499000000000003e-05,
+                "cumulative_time": 0.115214958,
+                "call_count": 3,
+                "time_per_call": 0.038404986,
+                "percentage_of_total": 97.19305691319244
+              }
+            },
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "~:0(<method 'detectMultiScale' of 'cv2.CascadeClassifier' objects>)",
+                "total_time": 0.11518875,
+                "cumulative_time": 0.11518875,
+                "call_count": 3,
+                "time_per_call": 0.03839625,
+                "percentage_of_total": 97.17094836340169
+              }
+            },
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "/Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:157(_preprocess_frame)",
+                "total_time": 3.65e-05,
+                "cumulative_time": 0.003122166,
+                "call_count": 3,
+                "time_per_call": 0.001040722,
+                "percentage_of_total": 2.633797407888951
+              }
+            },
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "~:0(<equalizeHist>)",
+                "total_time": 0.002303292,
+                "cumulative_time": 0.002303292,
+                "call_count": 3,
+                "time_per_call": 0.0007677640000000001,
+                "percentage_of_total": 1.9430115180331085
+              }
+            },
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "~:0(<GaussianBlur>)",
+                "total_time": 0.000295333,
+                "cumulative_time": 0.000295333,
+                "call_count": 3,
+                "time_per_call": 9.844433333333333e-05,
+                "percentage_of_total": 0.24913707018270892
+              }
+            },
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "~:0(<cvtColor>)",
+                "total_time": 0.00028979200000000003,
+                "cumulative_time": 0.00028979200000000003,
+                "call_count": 3,
+                "time_per_call": 9.659733333333334e-05,
+                "percentage_of_total": 0.24446279231371904
+              }
+            },
+            {
+              "type": "ProfileResult",
+              "data": {
+                "function_name": "~:0(<convertScaleAbs>)",
+                "total_time": 0.00019700000000000002,
+                "cumulative_time": 0.00019700000000000002,
+                "call_count": 3,
+                "time_per_call": 6.566666666666667e-05,
+                "percentage_of_total": 0.16618529871701995
+              }
+            }
+          ],
+          "recommendations": [
+            "High-impact function /Users/natebook/workspace/cat_counter_detection/performance_test.py:271(process_test_frames) consuming 100.0% of execution time. Consider optimizing this function or reducing call frequency.",
+            "High-impact function /Users/natebook/workspace/cat_counter_detection/detection_pipeline.py:167(_process_frame) consuming 100.0% of execution time. Consider optimizing this function or reducing call frequency.",
+            "High-impact function /Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:72(detect_cats) consuming 99.9% of execution time. Consider optimizing this function or reducing call frequency.",
+            "OpenCV bottleneck detected in /Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:195(_detect_with_haar_cascade) (97.2% of time). Consider: reducing image resolution, adjusting detection parameters, or using ROI to limit detection area.",
+            "OpenCV bottleneck detected in ~:0(<method 'detectMultiScale' of 'cv2.CascadeClassifier' objects>) (97.2% of time). Consider: reducing image resolution, adjusting detection parameters, or using ROI to limit detection area."
+          ],
+          "profile_data": "         157 function calls in 0.119 seconds\n\n   Ordered by: cumulative time\n   List reduced from 70 to 20 due to restriction <20>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n        1    0.000    0.000    0.118    0.118 /Users/natebook/workspace/cat_counter_detection/performance_test.py:271(process_test_frames)\n        3    0.000    0.000    0.118    0.039 /Users/natebook/workspace/cat_counter_detection/detection_pipeline.py:167(_process_frame)\n        3    0.000    0.000    0.118    0.039 /Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:72(detect_cats)\n        3    0.000    0.000    0.115    0.038 /Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:195(_detect_with_haar_cascade)\n        3    0.115    0.038    0.115    0.038 {method 'detectMultiScale' of 'cv2.CascadeClassifier' objects}\n        3    0.000    0.000    0.003    0.001 /Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:157(_preprocess_frame)\n        3    0.002    0.001    0.002    0.001 {equalizeHist}\n        3    0.000    0.000    0.000    0.000 {GaussianBlur}\n        3    0.000    0.000    0.000    0.000 {cvtColor}\n        3    0.000    0.000    0.000    0.000 {convertScaleAbs}\n        1    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:1436(info)\n        1    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:1565(_log)\n        3    0.000    0.000    0.000    0.000 /Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:179(_apply_roi)\n        1    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:1591(handle)\n        1    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:1645(callHandlers)\n        3    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:1424(debug)\n        1    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:939(handle)\n        4    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:1689(isEnabledFor)\n        1    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:1550(makeRecord)\n        1    0.000    0.000    0.000    0.000 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/logging/__init__.py:1071(emit)\n\n\n"
+        }
+      },
+      "result": true
+    }
+  },
+  "recommendations": [
+    "Target FPS achieved with optimization level 2. Best performance: 6865.03 FPS.",
+    "High-impact function /Users/natebook/workspace/cat_counter_detection/performance_test.py:271(process_test_frames) consuming 100.0% of execution time. Consider optimizing this function or reducing call frequency.",
+    "High-impact function /Users/natebook/workspace/cat_counter_detection/detection_pipeline.py:167(_process_frame) consuming 100.0% of execution time. Consider optimizing this function or reducing call frequency.",
+    "High-impact function /Users/natebook/workspace/cat_counter_detection/services/detection_engine.py:72(detect_cats) consuming 99.9% of execution time. Consider optimizing this function or reducing call frequency.",
+    "For Raspberry Pi Zero W: Ensure adequate power supply (2.5A minimum) to prevent throttling.",
+    "Consider using a high-speed SD card (Class 10 or better) for better I/O performance.",
+    "Monitor CPU temperature and add passive cooling if temperature exceeds 70\u00b0C regularly.",
+    "Use 'sudo raspi-config' to enable camera interface and allocate sufficient GPU memory (128MB+)."
+  ],
+  "test_summary": {
+    "test_duration_seconds": 47.284013,
+    "total_tests_run": 3,
+    "performance_target_met": true,
+    "recommended_optimization_level": 2,
+    "key_findings": [
+      "Performance target met: 6865.03 FPS achieved",
+      "Baseline system load: 21.7% CPU, 55.4% memory"
+    ],
+    "best_achieved_fps": 6865.029188717333
+  },
+  "frame_processing_optimizations": {
+    "downsampling": {
+      "factor_1.0": {
+        "total_frames_processed": 20,
+        "total_time": 4.76837158203125e-06,
+        "average_fps": 4194304.0,
+        "min_processing_time": 0.0,
+        "max_processing_time": 9.5367431640625e-07,
+        "processing_times": [
+          9.5367431640625e-07,
+          9.5367431640625e-07,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          9.5367431640625e-07,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          9.5367431640625e-07,
+          0.0,
+          9.5367431640625e-07,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "average_processing_time": 2.384185791015625e-07
+      },
+      "factor_0.8": {
+        "total_frames_processed": 20,
+        "total_time": 0.0038614273071289062,
+        "average_fps": 5179.431958508274,
+        "min_processing_time": 0.00015282630920410156,
+        "max_processing_time": 0.0003540515899658203,
+        "processing_times": [
+          0.0001900196075439453,
+          0.0003540515899658203,
+          0.0002372264862060547,
+          0.00019216537475585938,
+          0.00018596649169921875,
+          0.0001709461212158203,
+          0.00020885467529296875,
+          0.0002040863037109375,
+          0.00017261505126953125,
+          0.00017881393432617188,
+          0.000209808349609375,
+          0.00017499923706054688,
+          0.00018596649169921875,
+          0.00017118453979492188,
+          0.00015687942504882812,
+          0.00018405914306640625,
+          0.0001537799835205078,
+          0.00018310546875,
+          0.00015282630920410156,
+          0.00019407272338867188
+        ],
+        "average_processing_time": 0.0001930713653564453
+      },
+      "factor_0.6": {
+        "total_frames_processed": 20,
+        "total_time": 0.0032482147216796875,
+        "average_fps": 6157.228420434527,
+        "min_processing_time": 0.0001468658447265625,
+        "max_processing_time": 0.00023674964904785156,
+        "processing_times": [
+          0.0001499652862548828,
+          0.00023674964904785156,
+          0.00017213821411132812,
+          0.00020194053649902344,
+          0.0001609325408935547,
+          0.00014781951904296875,
+          0.00015687942504882812,
+          0.00015115737915039062,
+          0.00015282630920410156,
+          0.00014901161193847656,
+          0.00016498565673828125,
+          0.0001499652862548828,
+          0.00015687942504882812,
+          0.00015020370483398438,
+          0.0001552104949951172,
+          0.0001468658447265625,
+          0.00017261505126953125,
+          0.00015091896057128906,
+          0.00015425682067871094,
+          0.00016689300537109375
+        ],
+        "average_processing_time": 0.00016241073608398439
+      },
+      "factor_0.4": {
+        "total_frames_processed": 20,
+        "total_time": 0.0028154850006103516,
+        "average_fps": 7103.571851977305,
+        "min_processing_time": 0.0001227855682373047,
+        "max_processing_time": 0.00019693374633789062,
+        "processing_times": [
+          0.0001399517059326172,
+          0.0001239776611328125,
+          0.00012421607971191406,
+          0.0001251697540283203,
+          0.0001239776611328125,
+          0.00012493133544921875,
+          0.0001251697540283203,
+          0.0001239776611328125,
+          0.0001227855682373047,
+          0.00012421607971191406,
+          0.00019693374633789062,
+          0.00013494491577148438,
+          0.00018715858459472656,
+          0.00013017654418945312,
+          0.00012731552124023438,
+          0.00012683868408203125,
+          0.00014281272888183594,
+          0.00019216537475585938,
+          0.0001628398895263672,
+          0.00015592575073242188
+        ],
+        "average_processing_time": 0.0001407742500305176
+      }
+    },
+    "roi_processing": {
+      "roi_0": {
+        "roi": [
+          0,
+          0,
+          640,
+          480
+        ],
+        "benchmark": {
+          "total_frames_processed": 20,
+          "total_time": 8.344650268554688e-06,
+          "average_fps": 2396745.1428571427,
+          "min_processing_time": 0.0,
+          "max_processing_time": 3.0994415283203125e-06,
+          "processing_times": [
+            3.0994415283203125e-06,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            9.5367431640625e-07,
+            1.1920928955078125e-06,
+            0.0,
+            0.0,
+            0.0,
+            1.1920928955078125e-06,
+            0.0,
+            0.0,
+            9.5367431640625e-07,
+            0.0,
+            0.0,
+            0.0,
+            9.5367431640625e-07,
+            0.0,
+            0.0
+          ],
+          "average_processing_time": 4.172325134277344e-07
+        }
+      },
+      "roi_1": {
+        "roi": [
+          160,
+          120,
+          320,
+          240
+        ],
+        "benchmark": {
+          "total_frames_processed": 20,
+          "total_time": 6.9141387939453125e-06,
+          "average_fps": 2892623.4482758623,
+          "min_processing_time": 0.0,
+          "max_processing_time": 1.1920928955078125e-06,
+          "processing_times": [
+            9.5367431640625e-07,
+            1.1920928955078125e-06,
+            0.0,
+            0.0,
+            0.0,
+            9.5367431640625e-07,
+            0.0,
+            0.0,
+            0.0,
+            9.5367431640625e-07,
+            0.0,
+            0.0,
+            9.5367431640625e-07,
+            0.0,
+            0.0,
+            0.0,
+            9.5367431640625e-07,
+            0.0,
+            0.0,
+            9.5367431640625e-07
+          ],
+          "average_processing_time": 3.457069396972656e-07
+        }
+      },
+      "roi_2": {
+        "roi": [
+          200,
+          150,
+          240,
+          180
+        ],
+        "benchmark": {
+          "total_frames_processed": 20,
+          "total_time": 5.245208740234375e-06,
+          "average_fps": 3813003.6363636362,
+          "min_processing_time": 0.0,
+          "max_processing_time": 1.1920928955078125e-06,
+          "processing_times": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            9.5367431640625e-07,
+            0.0,
+            0.0,
+            0.0,
+            1.1920928955078125e-06,
+            0.0,
+            0.0,
+            9.5367431640625e-07,
+            0.0,
+            0.0,
+            0.0,
+            9.5367431640625e-07,
+            0.0,
+            0.0,
+            1.1920928955078125e-06,
+            0.0
+          ],
+          "average_processing_time": 2.6226043701171877e-07
+        }
+      }
+    },
+    "frame_skipping": {
+      "skip_0": {
+        "skip_count": 0,
+        "processed_frames": 30,
+        "skipped_frames": 0,
+        "total_time": 4.291534423828125e-06,
+        "effective_fps": 6990506.666666667
+      },
+      "skip_1": {
+        "skip_count": 1,
+        "processed_frames": 15,
+        "skipped_frames": 15,
+        "total_time": 3.814697265625e-06,
+        "effective_fps": 3932160.0
+      },
+      "skip_2": {
+        "skip_count": 2,
+        "processed_frames": 10,
+        "skipped_frames": 20,
+        "total_time": 4.0531158447265625e-06,
+        "effective_fps": 2467237.6470588236
+      },
+      "skip_3": {
+        "skip_count": 3,
+        "processed_frames": 8,
+        "skipped_frames": 22,
+        "total_time": 3.814697265625e-06,
+        "effective_fps": 2097152.0
+      }
+    }
+  },
+  "memory_optimization": {
+    "garbage_collection": {
+      "memory_before_mb": 16041.90625,
+      "memory_after_creation_mb": 16048.8125,
+      "memory_after_gc_mb": 16044.84375,
+      "objects_collected": 0,
+      "gc_time_seconds": 0.009151220321655273,
+      "memory_freed_mb": 3.96875
+    },
+    "object_creation": {
+      "list_creation": {
+        "list_comprehension_time": 0.0003352165222167969,
+        "loop_time": 0.0005016326904296875,
+        "comprehension_faster": true
+      },
+      "string_creation": {
+        "join_time": 0.00010895729064941406,
+        "concatenation_time": 0.00013685226440429688,
+        "join_faster": true
+      }
+    }
+  }
+}

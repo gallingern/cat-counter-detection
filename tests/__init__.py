@@ -1,0 +1,1 @@
+"""Test package for cat counter detection system."""

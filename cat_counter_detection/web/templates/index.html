@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Cat Counter Detection{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Dashboard</h1>
+    </div>
+</div>
+
+<div class="row">
+    <!-- System Status Card -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> System Status
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="mb-3">
+                            <span class="fw-bold">Status:</span>
+                            <span id="systemStatus">
+                                <span class="status-indicator status-inactive"></span>
+                                Inactive
+                            </span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="fw-bold">Monitoring:</span>
+                            <span id="monitoringStatus">
+                                <span class="status-indicator status-inactive"></span>
+                                Inactive
+                            </span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="fw-bold">Uptime:</span>
+                            <span id="systemUptime">0 seconds</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="mb-3">
+                            <span class="fw-bold">Current FPS:</span>
+                            <span id="currentFps">0.0</span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="fw-bold">Detections:</span>
+                            <span id="detectionCount">0</span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="fw-bold">Errors:</span>
+                            <span id="errorCount">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end mt-3">
+                    <button id="testDetectionBtn" class="btn btn-sm btn-primary me-2">
+                        <i class="bi bi-lightning"></i> Test Detection
+                    </button>
+                    <button id="cleanupBtn" class="btn btn-sm btn-secondary">
+                        <i class="bi bi-trash"></i> Cleanup Old Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Storage Stats Card -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-hdd"></i> Storage Statistics
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Storage Usage</label>
+                    <div class="progress">
+                        <div id="storageUsageBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <small class="text-muted">
+                        <span id="usedStorage">0</span> MB used of <span id="totalStorage">0</span> MB
+                    </small>
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <div class="mb-3">
+                            <span class="fw-bold">Detection Count:</span>
+                            <span id="storageDetectionCount">0</span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="fw-bold">Oldest Detection:</span>
+                            <span id="oldestDetection">N/A</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="mb-3">
+                            <span class="fw-bold">Available Space:</span>
+                            <span id="availableStorage">0</span> MB
+                        </div>
+                        <div class="mb-3">
+                            <span class="fw-bold">Newest Detection:</span>
+                            <span id="newestDetection">N/A</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Recent Detections Card -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-clock-history"></i> Recent Detections
+            </div>
+            <div class="card-body">
+                <div id="recentDetections" class="row">
+                    <div class="col-12 text-center py-5 text-muted">
+                        <i class="bi bi-camera" style="font-size: 2rem;"></i>
+                        <p class="mt-3">No recent detections</p>
+                    </div>
+                </div>
+                <div id="loadingDetections" class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading detections...</p>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="/history" class="btn btn-outline-primary">View All Detections</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Format timestamp
+    function formatTimestamp(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleString();
+    }
+
+    // Format uptime
+    function formatUptime(seconds) {
+        if (!seconds) return '0 seconds';
+        
+        const days = Math.floor(seconds / 86400);
+        const hours = Math.floor((seconds % 86400) / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        
+        let result = '';
+        if (days > 0) result += `${days}d `;
+        if (hours > 0) result += `${hours}h `;
+        if (minutes > 0) result += `${minutes}m `;
+        if (remainingSeconds > 0 || result === '') result += `${remainingSeconds}s`;
+        
+        return result;
+    }
+
+    // Update dashboard with system status
+    function updateDashboard(status) {
+        // Update system status
+        const systemStatusEl = document.getElementById('systemStatus');
+        const statusIndicator = systemStatusEl.querySelector('.status-indicator');
+        
+        if (status.running) {
+            statusIndicator.classList.remove('status-inactive');
+            statusIndicator.classList.add('status-active');
+            systemStatusEl.innerHTML = `
+                <span class="status-indicator status-active"></span>
+                Active
+            `;
+        } else {
+            statusIndicator.classList.remove('status-active');
+            statusIndicator.classList.add('status-inactive');
+            systemStatusEl.innerHTML = `
+                <span class="status-indicator status-inactive"></span>
+                Inactive
+            `;
+        }
+        
+        // Update monitoring status
+        const monitoringStatusEl = document.getElementById('monitoringStatus');
+        if (status.monitoring_active) {
+            monitoringStatusEl.innerHTML = `
+                <span class="status-indicator status-active"></span>
+                Active
+            `;
+        } else {
+            monitoringStatusEl.innerHTML = `
+                <span class="status-indicator status-inactive"></span>
+                Inactive
+            `;
+        }
+        
+        // Update other stats
+        document.getElementById('systemUptime').textContent = formatUptime(status.uptime_seconds);
+        document.getElementById('currentFps').textContent = status.current_fps.toFixed(1);
+        document.getElementById('detectionCount').textContent = status.detection_count;
+        document.getElementById('errorCount').textContent = status.error_count;
+    }
+
+    // Update storage statistics
+    function updateStorageStats() {
+        fetch('/api/storage-stats')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const stats = data.data;
+                    
+                    // Update storage usage bar
+                    const usagePercent = (stats.used_space_mb / stats.total_space_mb) * 100;
+                    const storageBar = document.getElementById('storageUsageBar');
+                    storageBar.style.width = `${usagePercent}%`;
+                    
+                    // Set bar color based on usage
+                    if (usagePercent > 90) {
+                        storageBar.classList.add('bg-danger');
+                    } else if (usagePercent > 70) {
+                        storageBar.classList.add('bg-warning');
+                    } else {
+                        storageBar.classList.add('bg-success');
+                    }
+                    
+                    // Update text values
+                    document.getElementById('usedStorage').textContent = stats.used_space_mb.toFixed(1);
+                    document.getElementById('totalStorage').textContent = stats.total_space_mb.toFixed(1);
+                    document.getElementById('availableStorage').textContent = stats.available_space_mb.toFixed(1);
+                    document.getElementById('storageDetectionCount').textContent = stats.detection_count;
+                    document.getElementById('oldestDetection').textContent = stats.oldest_detection;
+                    document.getElementById('newestDetection').textContent = stats.newest_detection;
+                }
+            })
+            .catch(error => console.error('Error fetching storage stats:', error));
+    }
+
+    // Load recent detections
+    function loadRecentDetections() {
+        const loadingEl = document.getElementById('loadingDetections');
+        loadingEl.style.display = 'block';
+        
+        fetch('/api/detections?limit=4')
+            .then(response => response.json())
+            .then(data => {
+                loadingEl.style.display = 'none';
+                
+                if (data.success && data.data.length > 0) {
+                    const detectionsContainer = document.getElementById('recentDetections');
+                    detectionsContainer.innerHTML = '';
+                    
+                    data.data.forEach(detection => {
+                        const detectionCard = `
+                            <div class="col-md-3 col-sm-6 mb-4">
+                                <div class="card detection-card h-100">
+                                    <img src="/api/image/${detection.image_path.split('/').pop()}" 
+                                         class="card-img-top detection-image" 
+                                         alt="Cat Detection">
+                                    <div class="card-body">
+                                        <h5 class="card-title">
+                                            ${detection.cat_count} Cat${detection.cat_count !== 1 ? 's' : ''}
+                                        </h5>
+                                        <p class="card-text">
+                                            <small class="text-muted">
+                                                ${formatTimestamp(detection.timestamp)}
+                                            </small>
+                                            <br>
+                                            <span class="badge bg-info">
+                                                ${(detection.confidence_score * 100).toFixed(0)}% confidence
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        detectionsContainer.innerHTML += detectionCard;
+                    });
+                } else {
+                    document.getElementById('recentDetections').innerHTML = `
+                        <div class="col-12 text-center py-5 text-muted">
+                            <i class="bi bi-camera" style="font-size: 2rem;"></i>
+                            <p class="mt-3">No recent detections</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading detections:', error);
+                loadingEl.style.display = 'none';
+            });
+    }
+
+    // Test detection button handler
+    document.getElementById('testDetectionBtn').addEventListener('click', function() {
+        this.disabled = true;
+        
+        fetch('/api/test-detection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            this.disabled = false;
+            if (data.success) {
+                showAlert('Test detection triggered successfully');
+                // Reload detections after a short delay
+                setTimeout(loadRecentDetections, 1000);
+            } else {
+                showAlert(data.error || 'Failed to trigger test detection', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            this.disabled = false;
+            showAlert('An error occurred', 'danger');
+        });
+    });
+
+    // Cleanup button handler
+    document.getElementById('cleanupBtn').addEventListener('click', function() {
+        if (!confirm('Are you sure you want to clean up old data?')) return;
+        
+        this.disabled = true;
+        
+        fetch('/api/cleanup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            this.disabled = false;
+            if (data.success) {
+                showAlert('Data cleanup completed successfully');
+                // Reload storage stats
+                updateStorageStats();
+                // Reload detections
+                loadRecentDetections();
+            } else {
+                showAlert(data.error || 'Failed to clean up data', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            this.disabled = false;
+            showAlert('An error occurred', 'danger');
+        });
+    });
+
+    // Enhanced status check function
+    function enhancedStatusCheck() {
+        fetch('/api/status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateDashboard(data.data);
+                    updateSystemStatus(data.data);
+                }
+            })
+            .catch(error => console.error('Error fetching system status:', error));
+    }
+
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initial data load
+        enhancedStatusCheck();
+        updateStorageStats();
+        loadRecentDetections();
+        
+        // Set up periodic updates
+        setInterval(enhancedStatusCheck, 5000);
+        setInterval(updateStorageStats, 30000);
+        setInterval(loadRecentDetections, 30000);
+    });
+</script>
+{% endblock %}

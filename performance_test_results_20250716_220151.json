@@ -1,0 +1,203 @@
+{
+  "test_start_time": "2025-07-16T22:01:04.608070",
+  "system_info": {
+    "timestamp": "2025-07-16T22:01:04.608078",
+    "opencv_available": true,
+    "psutil_available": true,
+    "cpu_count": 8,
+    "memory_total_mb": 32768.0,
+    "disk_total_gb": 460.4317207336426,
+    "boot_time": "2025-06-26T21:18:08"
+  },
+  "baseline_performance": {
+    "baseline_cpu_percent": 17.880000000000003,
+    "baseline_memory_percent": 54.6,
+    "baseline_memory_available_mb": 14868.0625
+  },
+  "optimization_levels": {
+    "level_0": {
+      "level": 0,
+      "settings": {
+        "target_fps": 1.0,
+        "max_cpu_percent": 50.0,
+        "max_memory_percent": 70.0,
+        "frame_downsample_factor": 1.0,
+        "detection_skip_frames": 0,
+        "gc_frequency_frames": 100,
+        "enable_frame_caching": true,
+        "enable_roi_optimization": true
+      },
+      "performance_metrics": {
+        "cpu_percent": 14.8,
+        "memory_percent": 54.6,
+        "memory_available_mb": 14877.015625,
+        "temperature_celsius": null,
+        "fps": 0.0
+      },
+      "frame_processing_results": {
+        "total_frames_processed": 30,
+        "total_time": 0.005442142486572266,
+        "average_fps": 5512.53482870411,
+        "min_processing_time": 0.000102996826171875,
+        "max_processing_time": 0.0019350051879882812,
+        "processing_times": [
+          0.0019350051879882812,
+          0.00019621849060058594,
+          0.00019788742065429688,
+          0.0001227855682373047,
+          0.00012373924255371094,
+          0.00012993812561035156,
+          0.00019788742065429688,
+          0.00014472007751464844,
+          0.00011491775512695312,
+          0.00013303756713867188,
+          0.0001068115234375,
+          0.0001087188720703125,
+          0.00010514259338378906,
+          0.0001049041748046875,
+          0.00012111663818359375,
+          0.00011372566223144531,
+          0.00011491775512695312,
+          0.00010800361633300781,
+          0.00010704994201660156,
+          0.0001049041748046875,
+          0.00010514259338378906,
+          0.0001049041748046875,
+          0.0001049041748046875,
+          0.0001049041748046875,
+          0.00010967254638671875,
+          0.0001049041748046875,
+          0.00010418891906738281,
+          0.000102996826171875,
+          0.00010609626770019531,
+          0.000102996826171875
+        ],
+        "average_processing_time": 0.00018140474955240886
+      }
+    },
+    "level_1": {
+      "level": 1,
+      "settings": {
+        "target_fps": 0.8,
+        "max_cpu_percent": 60.0,
+        "max_memory_percent": 75.0,
+        "frame_downsample_factor": 0.8,
+        "detection_skip_frames": 1,
+        "gc_frequency_frames": 50,
+        "enable_frame_caching": false,
+        "enable_roi_optimization": true
+      },
+      "performance_metrics": {
+        "cpu_percent": 18.1,
+        "memory_percent": 54.6,
+        "memory_available_mb": 14877.203125,
+        "temperature_celsius": null,
+        "fps": 0.0
+      },
+      "frame_processing_results": {
+        "total_frames_processed": 30,
+        "total_time": 0.008668184280395508,
+        "average_fps": 3460.9324201666805,
+        "min_processing_time": 1.9073486328125e-06,
+        "max_processing_time": 0.0010852813720703125,
+        "processing_times": [
+          2.86102294921875e-06,
+          0.0010852813720703125,
+          4.76837158203125e-06,
+          0.0005130767822265625,
+          4.76837158203125e-06,
+          0.0006058216094970703,
+          3.0994415283203125e-06,
+          0.0007140636444091797,
+          5.9604644775390625e-06,
+          0.0006210803985595703,
+          3.0994415283203125e-06,
+          0.0005769729614257812,
+          3.814697265625e-06,
+          0.0005152225494384766,
+          2.1457672119140625e-06,
+          0.0004849433898925781,
+          1.9073486328125e-06,
+          0.00044918060302734375,
+          4.0531158447265625e-06,
+          0.0005030632019042969,
+          2.1457672119140625e-06,
+          0.0004229545593261719,
+          1.9073486328125e-06,
+          0.00045108795166015625,
+          5.0067901611328125e-06,
+          0.00047707557678222656,
+          1.9073486328125e-06,
+          0.0006709098815917969,
+          1.9073486328125e-06,
+          0.0005280971527099609
+        ],
+        "average_processing_time": 0.0002889394760131836
+      }
+    },
+    "level_2": {
+      "level": 2,
+      "settings": {
+        "target_fps": 0.5,
+        "max_cpu_percent": 70.0,
+        "max_memory_percent": 80.0,
+        "frame_downsample_factor": 0.6,
+        "detection_skip_frames": 2,
+        "gc_frequency_frames": 25,
+        "enable_frame_caching": false,
+        "enable_roi_optimization": true
+      },
+      "performance_metrics": {
+        "cpu_percent": 21.3,
+        "memory_percent": 54.6,
+        "memory_available_mb": 14862.296875,
+        "temperature_celsius": null,
+        "fps": 0.0
+      },
+      "frame_processing_results": {
+        "total_frames_processed": 30,
+        "total_time": 0.005654335021972656,
+        "average_fps": 5305.663686962388,
+        "min_processing_time": 9.5367431640625e-07,
+        "max_processing_time": 0.0008828639984130859,
+        "processing_times": [
+          4.0531158447265625e-06,
+          1.9073486328125e-06,
+          0.0008828639984130859,
+          2.86102294921875e-06,
+          1.1920928955078125e-06,
+          0.00063323974609375,
+          6.9141387939453125e-06,
+          9.5367431640625e-07,
+          0.0005962848663330078,
+          4.0531158447265625e-06,
+          9.5367431640625e-07,
+          0.000537872314453125,
+          4.0531158447265625e-06,
+          1.9073486328125e-06,
+          0.0005729198455810547,
+          1.6689300537109375e-06,
+          9.5367431640625e-07,
+          0.00047469139099121094,
+          4.76837158203125e-06,
+          9.5367431640625e-07,
+          0.0004990100860595703,
+          2.86102294921875e-06,
+          1.6689300537109375e-06,
+          0.0004999637603759766,
+          2.1457672119140625e-06,
+          1.1920928955078125e-06,
+          0.00043392181396484375,
+          1.6689300537109375e-06,
+          1.9073486328125e-06,
+          0.0004749298095703125
+        ],
+        "average_processing_time": 0.0001884778340657552
+      }
+    }
+  },
+  "bottleneck_analysis": {
+    "initialization": {
+      "success": true,
+      "total_execution_time": 0.005063056945800781,
+      "analysis": 
