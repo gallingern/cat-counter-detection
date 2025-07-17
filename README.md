@@ -50,6 +50,75 @@ The Cat Counter Detection System is designed to keep your kitchen counters cat-f
    sudo systemctl start cat-detection
    ```
 
+### Detailed Deployment Guide
+
+#### 1. Clone the Repository
+
+SSH into your Raspberry Pi and clone the repository:
+
+```bash
+ssh pi@your-pi-ip-address
+mkdir -p projects
+cd projects
+git clone https://github.com/gallingern/cat-counter-detection.git
+cd cat-counter-detection
+```
+
+#### 2. Run the Installation Script
+
+Execute the installation script:
+
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+The script will:
+- Check if you're running on a Raspberry Pi
+- Verify Python version (3.7+ required)
+- Check for camera module
+- Create required directories
+- Install system dependencies
+- Install Python dependencies
+- Set up configuration
+- Create and enable a systemd service
+
+#### 3. Configure the System
+
+Edit the configuration file to match your environment:
+
+```bash
+nano config.json
+```
+
+Key settings to adjust:
+- `detection_roi`: Set the region of interest for your kitchen counter
+- `push_notifications_enabled`: Set to `true` if you want push notifications
+- `email_notifications_enabled`: Set to `true` if you want email notifications
+- `email_settings`: Configure if email notifications are enabled
+
+#### 4. Start the Service
+
+Start the detection service:
+
+```bash
+sudo systemctl start cat-detection
+```
+
+Check the service status:
+
+```bash
+sudo systemctl status cat-detection
+```
+
+#### 5. Access the Web Interface
+
+Open a web browser and navigate to:
+
+```
+http://your-pi-ip-address:5000
+```
+
 ## Usage
 
 ### Web Interface
@@ -107,6 +176,112 @@ cat_counter_detection/
 ```bash
 pytest tests/
 ```
+
+### Testing on Raspberry Pi
+
+#### Basic Functionality Testing
+
+1. **Camera Feed Test**:
+   - Check if the live feed is visible in the web interface
+   - Verify the camera is capturing at the expected resolution and frame rate
+
+2. **Detection Test**:
+   - Place a cat (or cat image) on your kitchen counter
+   - Verify that the system detects the cat
+   - Check that a notification is sent (if configured)
+   - Verify the detection is logged in the history
+
+3. **Configuration Test**:
+   - Change settings in the web interface
+   - Verify that changes take effect without requiring a restart
+
+#### Advanced Testing
+
+For comprehensive end-to-end testing, perform these additional tests:
+
+1. **Cat Type Testing**:
+   - Test with both lynx point (mostly white) and tabby (mostly brown) cats
+   - Verify detection works on the black kitchen counter
+   - Test different lighting conditions
+
+2. **Notification Testing**:
+   - Verify push notifications are received on your mobile device
+   - Check email notifications with attached images (if configured)
+   - Test notification cooldown and rate limiting
+
+3. **Performance Testing**:
+   - Monitor CPU usage (`top` command)
+   - Check memory usage
+   - Verify the system maintains at least 1 FPS
+   - Run for 24+ hours to test stability
+
+4. **Error Recovery Testing**:
+   - Temporarily disconnect the camera and verify recovery
+   - Simulate network outages for notification testing
+   - Test automatic restart after reboot
+
+### System Maintenance
+
+#### Backup Configuration
+
+Create a backup of your configuration and data:
+
+```bash
+./backup.sh
+```
+
+This creates a timestamped backup in the `backups/` directory.
+
+#### Restore from Backup
+
+Restore from a previous backup:
+
+```bash
+./restore.sh backups/cat_detection_backup_YYYYMMDD_HHMMSS.tar.gz
+```
+
+#### Update the System
+
+Update the system software and dependencies:
+
+```bash
+./update.sh
+```
+
+#### View Logs
+
+Check the system logs for troubleshooting:
+
+```bash
+sudo journalctl -u cat-detection -f
+```
+
+#### Troubleshooting
+
+1. **Camera Issues**:
+   - Run `vcgencmd get_camera` to verify camera detection
+   - Check camera ribbon cable connection
+   - Enable camera in `raspi-config` if needed
+
+2. **Service Won't Start**:
+   - Check logs: `sudo journalctl -u cat-detection -e`
+   - Verify Python dependencies are installed
+   - Check file permissions
+
+3. **Detection Problems**:
+   - Adjust `confidence_threshold` in config.json
+   - Modify `detection_roi` to focus on the counter area
+   - Check lighting conditions
+
+4. **Web Interface Inaccessible**:
+   - Verify the service is running
+   - Check firewall settings
+   - Confirm the Pi's IP address
+
+5. **Performance Issues**:
+   - Lower the resolution in the frame capture service
+   - Reduce the target FPS
+   - Enable adaptive performance in config.json
 
 ### Performance Optimization
 
