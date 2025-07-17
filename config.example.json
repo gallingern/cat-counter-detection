@@ -1,0 +1,44 @@
+{
+  "confidence_threshold": 0.7,
+  "detection_roi": [
+    0,
+    0,
+    640,
+    480
+  ],
+  "detection_sensitivity": "medium",
+  "min_detection_size": 50,
+  "temporal_consistency_frames": 2,
+  "monitoring_enabled": true,
+  "monitoring_start_hour": 0,
+  "monitoring_end_hour": 23,
+  "monitoring_days": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "push_notifications_enabled": true,
+  "email_notifications_enabled": false,
+  "email_settings": {
+    "smtp_server": "smtp.example.com",
+    "smtp_port": 587,
+    "username": "your_email@example.com",
+    "password": "",
+    "recipient": "your_email@example.com"
+  },
+  "notification_cooldown_minutes": 5,
+  "notification_max_per_hour": 12,
+  "notification_quiet_hours_start": 22,
+  "notification_quiet_hours_end": 7,
+  "notification_quiet_hours_enabled": false,
+  "max_storage_days": 30,
+  "image_quality": 85,
+  "auto_cleanup_enabled": true,
+  "target_fps": 1.0,
+  "max_cpu_usage": 50.0,
+  "adaptive_performance": true
+}
