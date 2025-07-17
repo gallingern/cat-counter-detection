@@ -31,7 +31,7 @@ The Cat Counter Detection System is designed to keep your kitchen counters cat-f
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/cat-counter-project/cat-counter-detection.git
+   git clone https://github.com/gallingern/cat-counter-detection.git
    cd cat-counter-detection
    ```
 
