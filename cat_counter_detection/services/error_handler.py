@@ -20,6 +20,14 @@ class ErrorSeverity(Enum):
     CRITICAL = "critical"
 
 
+class ComponentStatus(Enum):
+    """Component status levels."""
+    HEALTHY = "healthy"
+    DEGRADED = "degraded"
+    FAILED = "failed"
+    UNKNOWN = "unknown"
+
+
 @dataclass
 class ErrorRecord:
     """Record of an error occurrence."""
@@ -48,6 +56,9 @@ class ErrorHandler:
         self.processing_thread = None
         self.running = False
         
+        # Component status tracking
+        self.component_status: Dict[str, ComponentStatus] = {}
+        
         # System degradation state
         self.system_degraded = False
         self.camera_degraded = False
@@ -64,6 +75,7 @@ class ErrorHandler:
         self.component_recovery_attempts[component_name] = 0
         self.component_max_recovery_attempts[component_name] = max_recovery_attempts
         self.recovery_callbacks[component_name] = []
+        self.component_status[component_name] = ComponentStatus.HEALTHY
         self.logger.debug(f"Component registered: {component_name}")
     
     def register_recovery_callback(self, component_name: str, callback: Callable) -> None:
@@ -92,6 +104,13 @@ class ErrorHandler:
             self.component_error_counts[component_name] += 1
         else:
             self.component_error_counts[component_name] = 1
+        
+        # Update component status
+        if component_name in self.component_status:
+            if severity == ErrorSeverity.CRITICAL:
+                self.component_status[component_name] = ComponentStatus.FAILED
+            elif severity == ErrorSeverity.HIGH:
+                self.component_status[component_name] = ComponentStatus.DEGRADED
         
         # Log error
         self.logger.error(f"Error in {component_name}: {error} (Severity: {severity.value})")
@@ -163,6 +182,11 @@ class ErrorHandler:
                                     callback()
                                 error_record.recovery_successful = True
                                 self.logger.info(f"Recovery attempted for {component_name} (Attempt {self.component_recovery_attempts[component_name]})")
+                                
+                                # Update component status on successful recovery
+                                if component_name in self.component_status:
+                                    self.component_status[component_name] = ComponentStatus.HEALTHY
+                                
                             except Exception as e:
                                 self.logger.error(f"Recovery failed for {component_name}: {e}")
                     else:
@@ -193,10 +217,12 @@ class ErrorHandler:
             if component_name in self.component_error_counts:
                 self.component_error_counts[component_name] = 0
                 self.component_recovery_attempts[component_name] = 0
+                self.component_status[component_name] = ComponentStatus.HEALTHY
         else:
             for component in self.component_error_counts:
                 self.component_error_counts[component] = 0
                 self.component_recovery_attempts[component] = 0
+                self.component_status[component] = ComponentStatus.HEALTHY
     
     def attempt_system_recovery(self) -> bool:
         """Attempt recovery for all degraded components."""
@@ -210,6 +236,9 @@ class ErrorHandler:
             for callback in callbacks:
                 try:
                     callback()
+                    # Update component status on successful recovery
+                    if component_name in self.component_status:
+                        self.component_status[component_name] = ComponentStatus.HEALTHY
                 except Exception as e:
                     self.logger.error(f"Error in recovery callback for {component_name}: {e}")
                     recovery_success = False
@@ -240,6 +269,42 @@ class ErrorHandler:
     def is_system_degraded(self) -> bool:
         """Check if system is in degraded mode."""
         return self.system_degraded
+    
+    def get_component_health(self) -> Dict[str, ComponentStatus]:
+        """Get health status of all registered components."""
+        return self.component_status
+    
+    def get_error_summary(self, hours: int = 24) -> Dict[str, Any]:
+        """Get summary of errors in the last N hours."""
+        cutoff_time = datetime.now() - timedelta(hours=hours)
+        
+        # Filter errors by time
+        recent_errors = [e for e in self.error_records if e.timestamp >= cutoff_time]
+        
+        # Count errors by component and severity
+        component_counts = {}
+        severity_counts = {
+            ErrorSeverity.LOW.value: 0,
+            ErrorSeverity.MEDIUM.value: 0,
+            ErrorSeverity.HIGH.value: 0,
+            ErrorSeverity.CRITICAL.value: 0
+        }
+        
+        for error in recent_errors:
+            # Count by component
+            if error.component_name not in component_counts:
+                component_counts[error.component_name] = 0
+            component_counts[error.component_name] += 1
+            
+            # Count by severity
+            severity_counts[error.severity.value] += 1
+        
+        return {
+            "total_errors": len(recent_errors),
+            "component_counts": component_counts,
+            "severity_counts": severity_counts,
+            "time_period_hours": hours
+        }
 
 
 # Create global error handler instance
