@@ -36,7 +36,11 @@ if ! command -v python3 &> /dev/null; then
 fi
 
 python_version=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-if [ "$(echo "$python_version < 3.7" | bc)" -eq 1 ]; then
+python_version_major=$(echo "$python_version" | cut -d. -f1)
+python_version_minor=$(echo "$python_version" | cut -d. -f2)
+
+# Check if Python version is at least 3.7
+if [ "$python_version_major" -lt 3 ] || ([ "$python_version_major" -eq 3 ] && [ "$python_version_minor" -lt 7 ]); then
     echo "Python version $python_version detected. Version 3.7 or newer is required."
     echo "Would you like to install Python 3.9? (y/n)"
     read -r install_python
