@@ -155,36 +155,33 @@ else
     fi
 fi
 
-# Now check for camera module detection
-echo "Checking for camera module..."
-if vcgencmd get_camera | grep -q "detected=1"; then
-    echo "Camera module detected. ✓"
-    
-    # For detected cameras, try to determine type based on Pi model
-    if [ "$PI_TYPE" = "zero" ] || [ "$PI_TYPE" = "zero2" ] || [ "$PI_TYPE" = "pi3" ]; then
-        echo "Assuming Camera Module v1 or v2 based on Pi model..."
-        CAMERA_TYPE="v1"
-    else
-        echo "Assuming Camera Module v2 or newer based on Pi model..."
-        CAMERA_TYPE="v2"
-    fi
+# Check for saved camera configuration first
+if [ -f ".kiro/settings/camera_config" ]; then
+    source .kiro/settings/camera_config
+    echo "Found saved camera configuration: $CAMERA_TYPE"
+    echo "Using previously configured camera settings."
 else
-    # Only prompt for camera type if camera is not detected
-    echo "Camera module not detected. This could be because:"
-    echo "  1. Camera is not properly connected"
-    echo "  2. Camera interface is not enabled in config"
-    echo "  3. System needs to be rebooted after enabling camera"
-    echo ""
-    
-    # Check for saved camera configuration
-    if [ -f ".kiro/settings/camera_config" ]; then
-        source .kiro/settings/camera_config
-        echo "Found saved camera configuration: $CAMERA_TYPE"
-        echo "Using previously configured camera settings."
-    elif [ "$CAMERA_ENABLED" = true ] && [ "$INSTALL_TYPE" = "update" ]; then
-        echo "Camera interface is enabled but module not detected."
-        echo "Using previously configured camera settings."
+    # Now check for camera module detection
+    echo "Checking for camera module..."
+    if vcgencmd get_camera | grep -q "detected=1"; then
+        echo "Camera module detected. ✓"
+        
+        # For detected cameras, try to determine type based on Pi model
+        if [ "$PI_TYPE" = "zero" ] || [ "$PI_TYPE" = "zero2" ] || [ "$PI_TYPE" = "pi3" ]; then
+            echo "Assuming Camera Module v1 or v2 based on Pi model..."
+            CAMERA_TYPE="v1"
+        else
+            echo "Assuming Camera Module v2 or newer based on Pi model..."
+            CAMERA_TYPE="v2"
+        fi
     else
+        # Only prompt for camera type if camera is not detected
+        echo "Camera module not detected. This could be because:"
+        echo "  1. Camera is not properly connected"
+        echo "  2. Camera interface is not enabled in config"
+        echo "  3. System needs to be rebooted after enabling camera"
+        echo ""
+        
         echo "Please select your camera type:"
         echo "1) Camera Module v1 (Original 5MP camera)"
         echo "2) Camera Module v2 (8MP camera)"
