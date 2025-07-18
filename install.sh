@@ -524,18 +524,42 @@ else
     if ! pip list | grep -q "picamera2"; then
         echo "Installing picamera2 dependencies..."
         
-        # Install individual dependencies first
-        pip install pidng av jsonschema libarchive-c piexif || echo "Warning: Some picamera2 dependencies failed to install"
+        # Create a flag file to track installation attempts
+        mkdir -p .kiro/settings
+        PICAMERA_INSTALL_FLAG=".kiro/settings/picamera2_install_attempted"
         
-        # Install python-prctl separately as it often causes issues
-        pip install python-prctl || {
-            echo "Warning: python-prctl installation failed. Installing picamera2 without it..."
-            # Try installing picamera2 without python-prctl
-            pip install --no-deps picamera2 || log_error "Failed to install picamera2"
-        }
-        
-        # Now try to install picamera2
-        pip install picamera2 || log_error "Failed to install picamera2"
+        # Check if we've already attempted installation before
+        if [ -f "$PICAMERA_INSTALL_FLAG" ]; then
+            echo "Previous picamera2 installation attempt detected. Using simplified approach..."
+            # Try a direct install with --no-deps first
+            if pip install --no-deps picamera2; then
+                echo "picamera2 installed successfully with --no-deps."
+            else
+                # If that fails, try with minimal dependencies
+                echo "Installing minimal dependencies for picamera2..."
+                pip install numpy pillow || echo "Warning: Failed to install minimal dependencies"
+                pip install picamera2 || log_error "Failed to install picamera2"
+            fi
+        else
+            # First installation attempt - try the full approach
+            echo "First installation attempt - installing all dependencies..."
+            
+            # Install individual dependencies first with a timeout
+            timeout 120 pip install pidng av jsonschema libarchive-c piexif || echo "Warning: Some picamera2 dependencies failed to install"
+            
+            # Install python-prctl separately as it often causes issues
+            pip install python-prctl || {
+                echo "Warning: python-prctl installation failed. Installing picamera2 without it..."
+                # Try installing picamera2 without python-prctl
+                pip install --no-deps picamera2 || log_error "Failed to install picamera2"
+            }
+            
+            # Now try to install picamera2
+            pip install picamera2 || log_error "Failed to install picamera2"
+            
+            # Create flag file to indicate we've attempted installation
+            touch "$PICAMERA_INSTALL_FLAG"
+        fi
     else
         echo "picamera2 is already installed."
     fi
