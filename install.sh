@@ -443,8 +443,18 @@ else
     # For newer camera modules, try picamera2
     # Check if picamera2 is already installed
     if ! pip list | grep -q "picamera2"; then
+        echo "Installing picamera2 dependencies..."
+        # Install libcap-dev which is required for python-prctl
+        sudo apt-get install -y libcap-dev
+        
         echo "Installing picamera2..."
-        pip install picamera2 || echo "Warning: picamera2 installation failed. You may need to install it manually."
+        pip install picamera2 || {
+            echo "Warning: picamera2 installation failed. Trying alternative approach..."
+            # Try installing dependencies individually
+            pip install pidng av jsonschema libarchive-c piexif
+            pip install python-prctl || echo "Warning: python-prctl installation failed."
+            pip install picamera2 || echo "Warning: picamera2 installation failed. You may need to install it manually."
+        }
     else
         echo "picamera2 is already installed."
     fi
