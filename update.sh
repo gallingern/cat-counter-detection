@@ -74,10 +74,22 @@ if netstat -tuln | grep -q ":$WEB_PORT "; then
     if curl -s --head --fail "$WEB_URL" > /dev/null; then
         echo "✅ Web server is responding to HTTP requests"
     else
-        echo "❌ Web server is not responding to HTTP requests"
-        echo "  Possible issues:"
-        echo "  - The web application might not be properly initialized"
-        echo "  - There might be a firewall blocking connections"
+        echo -e "\e[31m❌ Web server is not responding to HTTP requests\e[0m"
+        echo -e "\e[31m  Possible issues:\e[0m"
+        echo -e "\e[31m  - The web application might not be properly initialized\e[0m"
+        echo -e "\e[31m  - There might be a firewall blocking connections\e[0m"
+        
+        # Run diagnostics
+        echo ""
+        echo -e "\e[33m=== Web Server Diagnostics ===\e[0m"
+        
+        # Check if curl can connect with verbose output
+        echo -e "\e[33m→ Testing connection with verbose output:\e[0m"
+        curl -v "$WEB_URL" 2>&1 | grep -E "^(\*|>|<)" | head -10
+        
+        # Check if the port is actually in use
+        echo -e "\e[33m→ Checking process using port $WEB_PORT:\e[0m"
+        sudo lsof -i :$WEB_PORT || echo "No process found using port $WEB_PORT"
     fi
 else
     echo -e "\e[31m❌ Web server is not listening on port $WEB_PORT\e[0m"
@@ -85,10 +97,60 @@ else
     echo -e "\e[31m  - The web application might not be starting correctly\e[0m"
     echo -e "\e[31m  - The port might be in use by another application\e[0m"
     
-    # Check logs for errors
+    # Run comprehensive diagnostics
     echo ""
-    echo "Checking service logs for errors..."
-    sudo journalctl -u cat-detection -n 20 --no-pager
+    echo -e "\e[33m=== Web Server Diagnostics ===\e[0m"
+    
+    # Check if the port is in use by another process
+    echo -e "\e[33m→ Checking if port $WEB_PORT is in use by another process:\e[0m"
+    if sudo lsof -i :$WEB_PORT 2>/dev/null; then
+        echo -e "\e[31m  Port $WEB_PORT is already in use by another process!\e[0m"
+    else
+        echo -e "\e[32m  Port $WEB_PORT is available.\e[0m"
+    fi
+    
+    # Check for web server related errors in the logs
+    echo -e "\e[33m→ Checking for web server related errors in logs:\e[0m"
+    WEB_ERRORS=$(sudo journalctl -u cat-detection -n 100 | grep -i "web\|flask\|app.run\|port\|import\|error\|exception\|failed" | tail -15)
+    if [ -n "$WEB_ERRORS" ]; then
+        echo -e "\e[31m  Found potential web server errors:\e[0m"
+        echo "$WEB_ERRORS" | while read -r line; do
+            # Highlight key error terms
+            echo "$line" | grep --color=always -E "error|exception|failed|traceback|import|module|not found|conflict"
+        done
+    else
+        echo -e "\e[33m  No specific web server errors found in recent logs.\e[0m"
+        
+        # Show last few log entries anyway
+        echo -e "\e[33m→ Last 10 log entries from service:\e[0m"
+        sudo journalctl -u cat-detection -n 10 --no-pager
+    fi
+    
+    # Check if Flask is installed
+    echo -e "\e[33m→ Checking if Flask is installed:\e[0m"
+    if source venv/bin/activate && python -c "import flask; print(f'Flask version: {flask.__version__}')" 2>/dev/null; then
+        echo -e "\e[32m  Flask is installed correctly.\e[0m"
+    else
+        echo -e "\e[31m  Flask is not installed or not accessible!\e[0m"
+        echo -e "\e[31m  Try running: pip install flask\e[0m"
+    fi
+    
+    # Check if the web app module exists and is importable
+    echo -e "\e[33m→ Checking web app module:\e[0m"
+    if [ -f "cat_counter_detection/web/app.py" ]; then
+        echo -e "\e[32m  Web app module exists at cat_counter_detection/web/app.py\e[0m"
+        
+        # Check for syntax errors in the web app module
+        echo -e "\e[33m→ Checking for syntax errors in web app module:\e[0m"
+        if source venv/bin/activate && python -m py_compile cat_counter_detection/web/app.py 2>/dev/null; then
+            echo -e "\e[32m  No syntax errors found in web app module.\e[0m"
+        else
+            echo -e "\e[31m  Syntax errors found in web app module!\e[0m"
+            source venv/bin/activate && python -c "import py_compile; py_compile.compile('cat_counter_detection/web/app.py')" 2>&1 | head -5
+        fi
+    else
+        echo -e "\e[31m  Web app module not found at cat_counter_detection/web/app.py!\e[0m"
+    fi
 fi
 
 # Check if the web app is configured in the code
