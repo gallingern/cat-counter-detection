@@ -110,6 +110,7 @@ sudo systemctl start cat-detection
 echo "🔧 Making scripts executable..."
 chmod +x start_detection.py
 chmod +x update.sh
+chmod +x install.sh
 
 # Test the installation
 echo "🧪 Testing installation..."
