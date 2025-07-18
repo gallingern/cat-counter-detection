@@ -346,7 +346,7 @@ class FrameCaptureService(FrameCaptureServiceInterface):
                 # Brief pause before retry
                 time.sleep(1.0)
     
-    @retry_on_error(max_attempts=3, delay=1.0, exceptions=(Exception,))
+    @retry_on_error(max_retries=3, delay_seconds=1.0, component_name="frame_capture")
     def start_capture(self) -> None:
         """Start camera capture with retry logic."""
         if not CAMERA_AVAILABLE:
