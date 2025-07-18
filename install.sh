@@ -7,6 +7,44 @@ echo "=== Cat Counter Detection System Installer ==="
 echo "This script will install the Cat Counter Detection system on your Raspberry Pi."
 echo ""
 
+# Function to check if package lists need updating and update them if necessary
+update_package_lists() {
+    # Check if we need to update package lists
+    if [ "$INSTALL_TYPE" = "fresh" ] || [ ! -f ".kiro/settings/last_apt_update" ] || [ "$(find .kiro/settings/last_apt_update -mtime +1 2>/dev/null)" ]; then
+        echo "Updating package lists (this may take a while)..."
+        sudo apt-get update
+        mkdir -p .kiro/settings
+        touch .kiro/settings/last_apt_update
+        return 0
+    else
+        echo "Package lists were updated recently. Skipping update..."
+        return 1
+    fi
+}
+
+# Function to install packages with caching
+install_packages() {
+    local packages=("$@")
+    local packages_to_install=""
+    
+    # Check if packages are already installed
+    for pkg in "${packages[@]}"; do
+        if ! dpkg -l | grep -q "ii  $pkg "; then
+            packages_to_install="$packages_to_install $pkg"
+        fi
+    done
+    
+    if [ -n "$packages_to_install" ]; then
+        echo "Installing packages:$packages_to_install"
+        update_package_lists
+        sudo apt-get install -y $packages_to_install
+        return 0
+    else
+        echo "All required packages are already installed."
+        return 1
+    fi
+}
+
 # Check if this is an update or a fresh install
 INSTALL_TYPE="fresh"
 if [ -d "venv" ] && [ -f "config.json" ]; then
@@ -82,8 +120,7 @@ if ! command -v python3 &> /dev/null; then
     install_python=${install_python:-Y}
     if [[ "$install_python" =~ ^[Yy]$ ]]; then
         echo "Installing Python 3.9..."
-        sudo apt-get update
-        sudo apt-get install -y python3.9 python3.9-venv python3.9-dev python3-pip
+        install_packages python3.9 python3.9-venv python3.9-dev python3-pip
         sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
         echo "Python 3.9 installed successfully."
     else
@@ -104,8 +141,7 @@ if [ "$python_version_major" -lt 3 ] || ([ "$python_version_major" -eq 3 ] && [ 
     install_python=${install_python:-Y}
     if [[ "$install_python" =~ ^[Yy]$ ]]; then
         echo "Installing Python 3.9..."
-        sudo apt-get update
-        sudo apt-get install -y python3.9 python3.9-venv python3.9-dev python3-pip
+        install_packages python3.9 python3.9-venv python3.9-dev python3-pip
         sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
         echo "Python 3.9 installed successfully."
         # Update python_version after installation
@@ -123,12 +159,7 @@ echo "Checking for camera prerequisites..."
 # Check for camera utilities and install if needed
 if ! command -v vcgencmd &> /dev/null; then
     echo "Camera utilities not found. Installing camera prerequisites..."
-    # Use apt-get directly without update since we'll do that later if needed
-    sudo apt-get install -y libraspberrypi-bin || {
-        echo "Installing camera utilities with update..."
-        sudo apt-get update
-        sudo apt-get install -y libraspberrypi-bin
-    }
+    install_packages libraspberrypi-bin
 fi
 
 # Check camera configuration - use cached result if available
@@ -262,7 +293,7 @@ if [ "$CAMERA_TYPE" = "v1" ]; then
     # For Camera Module v1, try to install python3-picamera from apt
     # Skip if already installed
     if ! dpkg -l | grep -q "ii  python3-picamera "; then
-        sudo apt-get install -y python3-picamera || {
+        install_packages python3-picamera || {
             echo "Warning: python3-picamera not available from apt. Will use pip version instead."
             # We'll install the pip version later
         }
@@ -278,31 +309,7 @@ mkdir -p logs
 
 # Install required packages
 echo "Installing required packages..."
-
-# Check if we need to update package lists
-if [ "$INSTALL_TYPE" = "fresh" ] || [ ! -f ".kiro/settings/last_apt_update" ] || [ "$(find .kiro/settings/last_apt_update -mtime +1)" ]; then
-    echo "Updating package lists (this may take a while)..."
-    sudo apt-get update
-    mkdir -p .kiro/settings
-    touch .kiro/settings/last_apt_update
-else
-    echo "Package lists were updated recently. Skipping update..."
-fi
-
-# Check if packages are already installed
-PACKAGES_TO_INSTALL=""
-for pkg in python3-pip python3-opencv python3-venv python3-full libatlas-base-dev libhdf5-dev; do
-    if ! dpkg -l | grep -q "ii  $pkg "; then
-        PACKAGES_TO_INSTALL="$PACKAGES_TO_INSTALL $pkg"
-    fi
-done
-
-if [ -n "$PACKAGES_TO_INSTALL" ]; then
-    echo "Installing missing packages: $PACKAGES_TO_INSTALL"
-    sudo apt-get install -y $PACKAGES_TO_INSTALL
-else
-    echo "All required packages are already installed."
-fi
+install_packages python3-pip python3-opencv python3-venv python3-full libatlas-base-dev libhdf5-dev
 
 # Set up virtual environment
 echo "Setting up Python virtual environment..."
@@ -445,7 +452,7 @@ else
     if ! pip list | grep -q "picamera2"; then
         echo "Installing picamera2 dependencies..."
         # Install libcap-dev which is required for python-prctl
-        sudo apt-get install -y libcap-dev
+        install_packages libcap-dev
         
         echo "Installing picamera2..."
         pip install picamera2 || {
