@@ -1,59 +1,55 @@
 #!/bin/bash
 
-# Cat Counter Detection System Update Script
-# This script updates the system software and dependencies
+# Quick update script for Cat Counter Detection System
+# This script only updates the necessary files and restarts the service
 
-echo "=== Cat Counter Detection System Update ==="
-echo "This script will update your system software and dependencies."
+echo "=== Cat Counter Detection System Quick Update ==="
+echo "This script will update only the necessary files and restart the service."
 echo ""
 
-# Create backup before updating
-echo "Creating backup before update..."
-./backup.sh
-
-# Stop the cat detection service
-echo "Stopping cat detection service..."
-sudo systemctl stop cat-detection.service 2>/dev/null || true
-
-# Update system packages
-echo "Updating system packages..."
-sudo apt-get update
-sudo apt-get upgrade -y
-
-# Update Python dependencies
-echo "Updating Python dependencies..."
-pip3 install --upgrade -r requirements.txt
-
-# Check for git repository
-if [ -d ".git" ]; then
-    echo "Checking for software updates..."
-    
-    # Stash any local changes
-    git stash
-    
-    # Get the current version
-    CURRENT_VERSION=$(git describe --tags --always)
-    
-    # Pull latest changes
-    git pull
-    
-    # Get the new version
-    NEW_VERSION=$(git describe --tags --always)
-    
-    if [ "$CURRENT_VERSION" != "$NEW_VERSION" ]; then
-        echo "Updated from version ${CURRENT_VERSION} to ${NEW_VERSION}"
-    else
-        echo "Already at the latest version: ${CURRENT_VERSION}"
-    fi
-else
-    echo "Not a git repository. Skipping software update check."
+# Check if git repository exists
+if [ ! -d ".git" ]; then
+    echo "Error: This doesn't appear to be a git repository."
+    echo "Please run the full install.sh script instead."
+    exit 1
 fi
 
-# Restart the cat detection service
-echo "Starting cat detection service..."
-sudo systemctl start cat-detection.service
+# Pull latest changes
+echo "Pulling latest changes from git repository..."
+git stash &> /dev/null  # Save any local changes
+git pull || {
+    echo "Error: Failed to pull latest changes."
+    exit 1
+}
+
+# Update systemd service file
+echo "Updating systemd service file..."
+sudo tee /etc/systemd/system/cat-detection.service > /dev/null << EOL
+[Unit]
+Description=Cat Counter Detection Service
+After=network.target
+
+[Service]
+ExecStart=$(pwd)/venv/bin/python $(pwd)/start_detection.py
+WorkingDirectory=$(pwd)
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=$USER
+
+[Install]
+WantedBy=multi-user.target
+EOL
+
+# Reload systemd and restart service
+echo "Reloading systemd and restarting service..."
+sudo systemctl daemon-reload
+sudo systemctl restart cat-detection
+
+# Check service status
+echo "Checking service status..."
+sudo systemctl status cat-detection --no-pager
 
 echo ""
-echo "=== Update Complete ==="
-echo "Your system has been updated to the latest version."
-echo ""
+echo "Update complete! The service has been restarted with the latest changes."
+echo "To view the web interface, navigate to: http://$(hostname -I | awk '{print $1}'):5000"
