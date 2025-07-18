@@ -50,6 +50,55 @@ sudo systemctl restart cat-detection
 echo "Checking service status..."
 sudo systemctl status cat-detection --no-pager
 
+# Check if web server is running
+echo ""
+echo "Checking web server status..."
+WEB_PORT=5000
+IP_ADDRESS=$(hostname -I | awk '{print $1}')
+WEB_URL="http://$IP_ADDRESS:$WEB_PORT"
+
+# Check if port 5000 is listening
+if netstat -tuln | grep -q ":$WEB_PORT "; then
+    echo "✓ Web server is listening on port $WEB_PORT"
+    
+    # Try to connect to the web server
+    if curl -s --head --fail "$WEB_URL" > /dev/null; then
+        echo "✓ Web server is responding to HTTP requests"
+    else
+        echo "✗ Web server is not responding to HTTP requests"
+        echo "  Possible issues:"
+        echo "  - The web application might not be properly initialized"
+        echo "  - There might be a firewall blocking connections"
+    fi
+else
+    echo "✗ Web server is not listening on port $WEB_PORT"
+    echo "  Possible issues:"
+    echo "  - The web application might not be starting correctly"
+    echo "  - The port might be in use by another application"
+    
+    # Check logs for errors
+    echo ""
+    echo "Checking service logs for errors..."
+    sudo journalctl -u cat-detection -n 20 --no-pager
+fi
+
+# Check if the web app is configured in the code
+echo ""
+echo "Checking web app configuration..."
+if grep -q "app.run" cat_counter_detection/web/app.py 2>/dev/null; then
+    echo "✓ Web application is configured in the code"
+    grep -n "app.run" cat_counter_detection/web/app.py
+else
+    echo "✗ Could not find web application configuration"
+    echo "  The web interface might not be properly implemented"
+fi
+
 echo ""
 echo "Update complete! The service has been restarted with the latest changes."
-echo "To view the web interface, navigate to: http://$(hostname -I | awk '{print $1}'):5000"
+echo "To view the web interface, navigate to: $WEB_URL"
+echo ""
+echo "If the web interface is not working, try the following:"
+echo "1. Check if the service is running: sudo systemctl status cat-detection"
+echo "2. Check the logs for errors: sudo journalctl -u cat-detection -n 50"
+echo "3. Make sure port 5000 is not blocked by a firewall"
+echo "4. Try restarting the service: sudo systemctl restart cat-detection"
