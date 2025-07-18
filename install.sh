@@ -7,16 +7,7 @@ echo "=== Simple Cat Detection System Installation ==="
 echo "This script will install the necessary dependencies and set up the system."
 echo ""
 
-# Check if this is the latest version
-echo "🔍 Checking script version..."
-if grep -q "sudo apt-get install -y.*python3-picamera" "$0"; then
-    echo "❌ This appears to be an old version of the install script."
-    echo "Please run: git pull origin main"
-    echo "Then try again."
-    exit 1
-fi
-echo "✅ Using latest version of install script"
-echo ""
+
 
 # Check if running on Raspberry Pi
 if ! grep -q "Raspberry Pi" /proc/device-tree/model 2>/dev/null; then
