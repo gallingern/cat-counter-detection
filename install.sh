@@ -120,38 +120,54 @@ echo "Python $python_version detected. ✓"
 # Check for camera prerequisites
 echo "Checking for camera prerequisites..."
 
-# Check if camera interface is enabled
+# Check for camera utilities and install if needed
 if ! command -v vcgencmd &> /dev/null; then
     echo "Camera utilities not found. Installing camera prerequisites..."
-    sudo apt-get update
-    sudo apt-get install -y libraspberrypi-bin
+    # Use apt-get directly without update since we'll do that later if needed
+    sudo apt-get install -y libraspberrypi-bin || {
+        echo "Installing camera utilities with update..."
+        sudo apt-get update
+        sudo apt-get install -y libraspberrypi-bin
+    }
 fi
 
-# Check camera configuration
+# Check camera configuration - use cached result if available
 echo "Checking camera configuration..."
-
-# First, check if camera is enabled in config - need to check both start_x=1 and gpu_mem settings
 CAMERA_ENABLED=false
-if grep -q "^start_x=1" /boot/config.txt 2>/dev/null || grep -q "^gpu_mem=" /boot/config.txt 2>/dev/null; then
-    echo "Camera interface is enabled in configuration. ✓"
+
+# Check for cached camera configuration
+if [ -f ".kiro/settings/camera_enabled" ]; then
+    echo "Using cached camera configuration."
     CAMERA_ENABLED=true
 else
-    echo "Camera interface is not enabled in Raspberry Pi configuration."
-    echo "Would you like to enable it now? (Y/n)"
-    read -r enable_camera
-    enable_camera=${enable_camera:-Y}
-    if [[ "$enable_camera" =~ ^[Yy]$ ]]; then
-        echo "Enabling camera interface..."
-        sudo raspi-config nonint do_camera 0
-        # Also set minimum GPU memory for camera
-        if ! grep -q "^gpu_mem=" /boot/config.txt; then
-            echo "Setting minimum GPU memory for camera..."
-            echo "gpu_mem=128" | sudo tee -a /boot/config.txt
-        fi
+    # First, check if camera is enabled in config - need to check both start_x=1 and gpu_mem settings
+    if grep -q "^start_x=1" /boot/config.txt 2>/dev/null || grep -q "^gpu_mem=" /boot/config.txt 2>/dev/null; then
+        echo "Camera interface is enabled in configuration. ✓"
         CAMERA_ENABLED=true
-        REBOOT_REQUIRED=true
+        # Cache the result
+        mkdir -p .kiro/settings
+        touch .kiro/settings/camera_enabled
     else
-        echo "Warning: Camera interface not enabled. The system may not work properly."
+        echo "Camera interface is not enabled in Raspberry Pi configuration."
+        echo "Would you like to enable it now? (Y/n)"
+        read -r enable_camera
+        enable_camera=${enable_camera:-Y}
+        if [[ "$enable_camera" =~ ^[Yy]$ ]]; then
+            echo "Enabling camera interface..."
+            sudo raspi-config nonint do_camera 0
+            # Also set minimum GPU memory for camera
+            if ! grep -q "^gpu_mem=" /boot/config.txt; then
+                echo "Setting minimum GPU memory for camera..."
+                echo "gpu_mem=128" | sudo tee -a /boot/config.txt
+            fi
+            CAMERA_ENABLED=true
+            REBOOT_REQUIRED=true
+            # Cache the result
+            mkdir -p .kiro/settings
+            touch .kiro/settings/camera_enabled
+        else
+            echo "Warning: Camera interface not enabled. The system may not work properly."
+        fi
     fi
 fi
 
@@ -244,7 +260,15 @@ echo "CAMERA_TYPE=$CAMERA_TYPE" > .kiro/settings/camera_config
 echo "Installing camera support packages..."
 if [ "$CAMERA_TYPE" = "v1" ]; then
     # For Camera Module v1, try to install python3-picamera from apt
-    sudo apt-get install -y python3-picamera || echo "Warning: python3-picamera not available from apt"
+    # Skip if already installed
+    if ! dpkg -l | grep -q "ii  python3-picamera "; then
+        sudo apt-get install -y python3-picamera || {
+            echo "Warning: python3-picamera not available from apt. Will use pip version instead."
+            # We'll install the pip version later
+        }
+    else
+        echo "python3-picamera is already installed."
+    fi
 fi
 
 # Create required directories
@@ -254,9 +278,31 @@ mkdir -p logs
 
 # Install required packages
 echo "Installing required packages..."
-sudo apt-get update
-# Updated package list for newer Raspberry Pi OS versions
-sudo apt-get install -y python3-pip python3-opencv python3-venv python3-full libatlas-base-dev libhdf5-dev
+
+# Check if we need to update package lists
+if [ "$INSTALL_TYPE" = "fresh" ] || [ ! -f ".kiro/settings/last_apt_update" ] || [ "$(find .kiro/settings/last_apt_update -mtime +1)" ]; then
+    echo "Updating package lists (this may take a while)..."
+    sudo apt-get update
+    mkdir -p .kiro/settings
+    touch .kiro/settings/last_apt_update
+else
+    echo "Package lists were updated recently. Skipping update..."
+fi
+
+# Check if packages are already installed
+PACKAGES_TO_INSTALL=""
+for pkg in python3-pip python3-opencv python3-venv python3-full libatlas-base-dev libhdf5-dev; do
+    if ! dpkg -l | grep -q "ii  $pkg "; then
+        PACKAGES_TO_INSTALL="$PACKAGES_TO_INSTALL $pkg"
+    fi
+done
+
+if [ -n "$PACKAGES_TO_INSTALL" ]; then
+    echo "Installing missing packages: $PACKAGES_TO_INSTALL"
+    sudo apt-get install -y $PACKAGES_TO_INSTALL
+else
+    echo "All required packages are already installed."
+fi
 
 # Set up virtual environment
 echo "Setting up Python virtual environment..."
@@ -296,16 +342,21 @@ fi
 # Install TensorFlow Lite runtime with the correct version for Raspberry Pi
 echo "Installing TensorFlow Lite runtime..."
 
-# Get Python version for wheel selection
-python_version_for_wheel=$(python3 -c 'import sys; print(f"{sys.version_info.major}{sys.version_info.minor}")')
-echo "Detected Python version for wheel: $python_version_for_wheel"
+# Check if TensorFlow Lite is already installed
+if python3 -c "import tflite_runtime" &> /dev/null; then
+    echo "TensorFlow Lite runtime is already installed. ✓"
+else
+    # Get Python version for wheel selection
+    python_version_for_wheel=$(python3 -c 'import sys; print(f"{sys.version_info.major}{sys.version_info.minor}")')
+    echo "Detected Python version for wheel: $python_version_for_wheel"
 
-# Create a mock tflite_runtime module if we can't install the real one
-# This allows the application to import the module without errors, even though it won't have full functionality
-create_mock_tflite_runtime() {
-    echo "Creating mock TensorFlow Lite runtime module..."
-    mkdir -p $(python -c "import site; print(site.getsitepackages()[0])")/tflite_runtime
-    cat > $(python -c "import site; print(site.getsitepackages()[0])")/tflite_runtime/__init__.py << EOL
+    # Create a mock tflite_runtime module if we can't install the real one
+    # This allows the application to import the module without errors, even though it won't have full functionality
+    create_mock_tflite_runtime() {
+        echo "Creating mock TensorFlow Lite runtime module..."
+        site_packages=$(python -c "import site; print(site.getsitepackages()[0])")
+        mkdir -p "$site_packages/tflite_runtime"
+        cat > "$site_packages/tflite_runtime/__init__.py" << EOL
 # Mock TensorFlow Lite Runtime module
 import warnings
 warnings.warn("Using mock TensorFlow Lite Runtime. Object detection functionality will be limited.")
@@ -341,36 +392,39 @@ class Interpreter:
         import numpy as np
         return np.zeros((1, 10, 4))  # Return empty detection results
 EOL
-    echo "Mock TensorFlow Lite runtime module created."
-}
+        # Create an empty setup.py file to make it look like a proper package
+        touch "$site_packages/tflite_runtime/setup.py"
+        echo "Mock TensorFlow Lite runtime module created."
+    }
 
-# Try to install tflite-runtime using pip
-if pip install tflite-runtime; then
-    echo "TensorFlow Lite runtime installed successfully."
-else
-    echo "Standard tflite-runtime installation failed. Trying alternative methods..."
-    
-    # Try to find a compatible wheel based on Python version and architecture
-    if [ "$python_version_for_wheel" = "311" ]; then
-        echo "Using compatible wheel for Python 3.11..."
-        if pip install --extra-index-url https://google-coral.github.io/py-repo/ tflite_runtime; then
-            echo "TensorFlow Lite runtime installed successfully from Google Coral repository."
-        else
-            echo "Warning: TensorFlow Lite installation failed. Creating mock module for compatibility."
-            create_mock_tflite_runtime
-        fi
-    elif [ "$python_version_for_wheel" = "39" ]; then
-        echo "Using compatible wheel for Python 3.9..."
-        if pip install https://github.com/google-coral/pycoral/releases/download/v2.0.0/tflite_runtime-2.5.0.post1-cp39-cp39-linux_aarch64.whl; then
-            echo "TensorFlow Lite runtime installed successfully from wheel."
-        else
-            echo "Warning: TensorFlow Lite installation failed. Creating mock module for compatibility."
-            create_mock_tflite_runtime
-        fi
+    # Try to install tflite-runtime using pip
+    if pip install tflite-runtime; then
+        echo "TensorFlow Lite runtime installed successfully."
     else
-        echo "Warning: No compatible TensorFlow Lite wheel found for Python $python_version_for_wheel."
-        echo "Creating mock module for compatibility."
-        create_mock_tflite_runtime
+        echo "Standard tflite-runtime installation failed. Trying alternative methods..."
+        
+        # Try to find a compatible wheel based on Python version and architecture
+        if [ "$python_version_for_wheel" = "311" ]; then
+            echo "Using compatible wheel for Python 3.11..."
+            if pip install --extra-index-url https://google-coral.github.io/py-repo/ tflite_runtime; then
+                echo "TensorFlow Lite runtime installed successfully from Google Coral repository."
+            else
+                echo "Warning: TensorFlow Lite installation failed. Creating mock module for compatibility."
+                create_mock_tflite_runtime
+            fi
+        elif [ "$python_version_for_wheel" = "39" ]; then
+            echo "Using compatible wheel for Python 3.9..."
+            if pip install https://github.com/google-coral/pycoral/releases/download/v2.0.0/tflite_runtime-2.5.0.post1-cp39-cp39-linux_aarch64.whl; then
+                echo "TensorFlow Lite runtime installed successfully from wheel."
+            else
+                echo "Warning: TensorFlow Lite installation failed. Creating mock module for compatibility."
+                create_mock_tflite_runtime
+            fi
+        else
+            echo "Warning: No compatible TensorFlow Lite wheel found for Python $python_version_for_wheel."
+            echo "Creating mock module for compatibility."
+            create_mock_tflite_runtime
+        fi
     fi
 fi
 
@@ -378,10 +432,22 @@ fi
 echo "Installing camera libraries..."
 if [ "$CAMERA_TYPE" = "v1" ]; then
     # For Camera Module v1, use picamera
-    pip install picamera
+    # Check if picamera is already installed
+    if ! pip list | grep -q "picamera"; then
+        echo "Installing picamera..."
+        pip install picamera
+    else
+        echo "picamera is already installed."
+    fi
 else
     # For newer camera modules, try picamera2
-    pip install picamera2 || echo "Warning: picamera2 installation failed. You may need to install it manually."
+    # Check if picamera2 is already installed
+    if ! pip list | grep -q "picamera2"; then
+        echo "Installing picamera2..."
+        pip install picamera2 || echo "Warning: picamera2 installation failed. You may need to install it manually."
+    else
+        echo "picamera2 is already installed."
+    fi
 fi
 
 # Set up configuration
