@@ -69,6 +69,10 @@ if ! command -v vcgencmd &> /dev/null; then
     sudo apt-get install -y libraspberrypi-bin
 fi
 
+# Check for Camera Module v1 specific packages
+echo "Installing Camera Module v1 specific packages..."
+sudo apt-get install -y python3-picamera
+
 # Check if camera is enabled in config
 if ! grep -q "^start_x=1" /boot/config.txt 2>/dev/null; then
     echo "Camera interface is not enabled in Raspberry Pi configuration."
@@ -81,6 +85,22 @@ if ! grep -q "^start_x=1" /boot/config.txt 2>/dev/null; then
         REBOOT_REQUIRED=true
     else
         echo "Warning: Camera interface not enabled. The system may not work properly."
+    fi
+fi
+
+# Check if legacy camera stack is enabled (required for Camera Module v1)
+echo "Checking camera stack configuration..."
+if ! grep -q "^camera_auto_detect=0" /boot/config.txt 2>/dev/null; then
+    echo "Legacy camera stack is not enabled. Camera Module v1 requires the legacy camera stack."
+    echo "Would you like to enable it now? (y/n)"
+    read -r enable_legacy
+    if [ "$enable_legacy" = "y" ]; then
+        echo "Enabling legacy camera stack..."
+        sudo raspi-config nonint do_legacy 0
+        echo "Legacy camera stack enabled. A reboot will be required after installation."
+        REBOOT_REQUIRED=true
+    else
+        echo "Warning: Legacy camera stack not enabled. Camera Module v1 may not work properly."
     fi
 fi
 
