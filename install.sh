@@ -9,7 +9,7 @@ echo ""
 
 # Check if this is the latest version
 echo "🔍 Checking script version..."
-if grep -q "python3-picamera" "$0"; then
+if grep -q "sudo apt-get install -y.*python3-picamera" "$0"; then
     echo "❌ This appears to be an old version of the install script."
     echo "Please run: git pull origin main"
     echo "Then try again."
