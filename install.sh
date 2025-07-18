@@ -21,14 +21,37 @@ fi
 # Check for Python 3.7+
 echo "Checking Python version..."
 if ! command -v python3 &> /dev/null; then
-    echo "Python 3 not found. Please install Python 3.7 or newer."
-    exit 1
+    echo "Python 3 not found. Would you like to install Python 3.9? (y/n)"
+    read -r install_python
+    if [ "$install_python" = "y" ]; then
+        echo "Installing Python 3.9..."
+        sudo apt-get update
+        sudo apt-get install -y python3.9 python3.9-venv python3.9-dev python3-pip
+        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+        echo "Python 3.9 installed successfully."
+    else
+        echo "Installation cancelled. Python 3.7 or newer is required."
+        exit 1
+    fi
 fi
 
 python_version=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
 if [ "$(echo "$python_version < 3.7" | bc)" -eq 1 ]; then
     echo "Python version $python_version detected. Version 3.7 or newer is required."
-    exit 1
+    echo "Would you like to install Python 3.9? (y/n)"
+    read -r install_python
+    if [ "$install_python" = "y" ]; then
+        echo "Installing Python 3.9..."
+        sudo apt-get update
+        sudo apt-get install -y python3.9 python3.9-venv python3.9-dev python3-pip
+        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+        echo "Python 3.9 installed successfully."
+        # Update python_version after installation
+        python_version=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+    else
+        echo "Installation cancelled. Python 3.7 or newer is required."
+        exit 1
+    fi
 fi
 echo "Python $python_version detected. ✓"
 
