@@ -86,6 +86,14 @@ class ErrorHandler:
         self.recovery_callbacks[component_name].append(callback)
         self.logger.debug(f"Recovery callback registered for {component_name}")
     
+    def register_recovery_strategy(self, error_type: str, recovery_function: Callable) -> None:
+        """Register a recovery strategy for a specific error type."""
+        if not hasattr(self, 'recovery_strategies'):
+            self.recovery_strategies = {}
+        
+        self.recovery_strategies[error_type] = recovery_function
+        self.logger.debug(f"Recovery strategy registered for error type: {error_type}")
+    
     def handle_error(self, component_name: str, error: Exception, severity: ErrorSeverity) -> None:
         """Handle an error from a component."""
         # Create error record
