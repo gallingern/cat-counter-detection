@@ -770,8 +770,9 @@ class HealthChecker:
         report = self.get_health_report()
         
         self.logger.info(f"Manual health check completed - Status: {report.overall_status.value}")
-        return report    def _
-get_degradation_status(self) -> Dict[str, Any]:
+        return report
+        
+    def _get_degradation_status(self) -> Dict[str, Any]:
         """Get system degradation status."""
         degradation_status = {
             "system_degraded": False,
