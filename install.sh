@@ -581,7 +581,7 @@ Description=Cat Counter Detection Service
 After=network.target
 
 [Service]
-ExecStart=$(pwd)/venv/bin/python $(pwd)/cat_counter_detection/detection_pipeline.py
+ExecStart=$(pwd)/venv/bin/python $(pwd)/start_detection.py
 WorkingDirectory=$(pwd)
 StandardOutput=inherit
 StandardError=inherit
