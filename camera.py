@@ -9,7 +9,10 @@ import threading
 import picamera
 from picamera.array import PiRGBArray
 import numpy as np
-import config
+try:
+    from . import config
+except ImportError:
+    import config
 
 logger = logging.getLogger(__name__)
 

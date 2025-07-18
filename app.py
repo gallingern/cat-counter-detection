@@ -8,9 +8,14 @@ import threading
 from flask import Flask, Response, render_template
 import cv2
 import numpy as np
-from . import config
-from .camera import Camera
-from .detector import CatDetector
+try:
+    from . import config
+    from .camera import Camera
+    from .detector import CatDetector
+except ImportError:
+    import config
+    from camera import Camera
+    from detector import CatDetector
 
 # Configure logging
 logging.basicConfig(
@@ -33,6 +38,7 @@ detection_count = 0
 last_frame = None
 last_annotated_frame = None
 processing = False
+start_time = None
 
 def initialize():
     """Initialize the camera and detector."""

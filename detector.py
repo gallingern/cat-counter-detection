@@ -6,7 +6,10 @@ import cv2
 import logging
 import os
 import time
-import config
+try:
+    from . import config
+except ImportError:
+    import config
 
 logger = logging.getLogger(__name__)
 
