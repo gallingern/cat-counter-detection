@@ -80,10 +80,10 @@ if netstat -tuln | grep -q ":$WEB_PORT "; then
         echo "  - There might be a firewall blocking connections"
     fi
 else
-    echo "❌ Web server is not listening on port $WEB_PORT"
-    echo "  Possible issues:"
-    echo "  - The web application might not be starting correctly"
-    echo "  - The port might be in use by another application"
+    echo -e "\e[31m❌ Web server is not listening on port $WEB_PORT\e[0m"
+    echo -e "\e[31m  Possible issues:\e[0m"
+    echo -e "\e[31m  - The web application might not be starting correctly\e[0m"
+    echo -e "\e[31m  - The port might be in use by another application\e[0m"
     
     # Check logs for errors
     echo ""
