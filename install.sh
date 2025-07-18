@@ -20,16 +20,41 @@ update_package_lists() {
     # Check if we need to update package lists
     if [ "$INSTALL_TYPE" = "fresh" ] || [ ! -f ".kiro/settings/last_apt_update" ] || [ "$(find .kiro/settings/last_apt_update -mtime +1 2>/dev/null)" ]; then
         echo "Updating package lists (this may take a while)..."
-        sudo apt-get update || {
-            log_error "Failed to update package lists"
-            return 1
-        }
-        mkdir -p .kiro/settings
-        touch .kiro/settings/last_apt_update
-        return 0
+        
+        # Ask if user wants to skip update if it's not a fresh install
+        if [ "$INSTALL_TYPE" != "fresh" ]; then
+            echo "Package list updates can be slow on Raspberry Pi. Would you like to skip this step? (y/N)"
+            read -r skip_update
+            if [[ "$skip_update" =~ ^[Yy]$ ]]; then
+                echo "Skipping package list update..."
+                return 0
+            fi
+        fi
+        
+        # Try with a timeout first
+        echo "Attempting package list update with timeout (30 seconds)..."
+        if timeout 30 sudo apt-get update; then
+            echo "Package lists updated successfully."
+            mkdir -p .kiro/settings
+            touch .kiro/settings/last_apt_update
+            return 0
+        fi
+        
+        echo "Update timed out. Trying with limited sources..."
+        # Try with only the raspberrypi.com source which is usually more reliable
+        if timeout 30 sudo apt-get update -o Dir::Etc::sourceparts=/dev/null -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/raspi.list; then
+            echo "Limited update completed successfully."
+            mkdir -p .kiro/settings
+            touch .kiro/settings/last_apt_update
+            return 0
+        fi
+        
+        echo "Limited update also failed. Proceeding without updates..."
+        log_error "Failed to update package lists - continuing with installation anyway"
+        return 0  # Return success to continue installation
     else
         echo "Package lists were updated recently. Skipping update..."
-        return 1
+        return 0
     fi
 }
 
