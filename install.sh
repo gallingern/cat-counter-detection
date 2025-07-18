@@ -25,12 +25,11 @@ sudo apt-get update
 
 # Install required packages
 echo "📦 Installing required packages..."
-sudo apt-get install -y python3-pip python3-picamera python3-opencv python3-flask
+sudo apt-get install -y python3-pip python3-opencv python3-flask python3-venv python3-full
 
 # Create virtual environment
 echo "🐍 Creating Python virtual environment..."
-python3 -m pip install --user virtualenv
-python3 -m virtualenv venv
+python3 -m venv venv
 
 # Activate virtual environment and install dependencies
 echo "🐍 Installing Python dependencies..."
@@ -76,6 +75,20 @@ sudo systemctl start cat-detection
 # Make scripts executable
 chmod +x start_detection.py
 chmod +x update.sh
+
+# Test the installation
+echo "🧪 Testing installation..."
+if python3 -c "import cv2, flask; print('✅ Dependencies installed successfully')" 2>/dev/null; then
+    echo "✅ Installation test passed"
+else
+    echo "❌ Installation test failed - checking virtual environment..."
+    if source venv/bin/activate && python -c "import cv2, flask; print('✅ Virtual environment test passed')" 2>/dev/null; then
+        echo "✅ Virtual environment is working correctly"
+    else
+        echo "❌ Virtual environment test failed"
+        echo "Please check the installation manually"
+    fi
+fi
 
 # Print completion message
 echo ""
