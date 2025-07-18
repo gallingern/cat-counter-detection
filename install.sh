@@ -300,21 +300,79 @@ echo "Installing TensorFlow Lite runtime..."
 python_version_for_wheel=$(python3 -c 'import sys; print(f"{sys.version_info.major}{sys.version_info.minor}")')
 echo "Detected Python version for wheel: $python_version_for_wheel"
 
+# Create a mock tflite_runtime module if we can't install the real one
+# This allows the application to import the module without errors, even though it won't have full functionality
+create_mock_tflite_runtime() {
+    echo "Creating mock TensorFlow Lite runtime module..."
+    mkdir -p $(python -c "import site; print(site.getsitepackages()[0])")/tflite_runtime
+    cat > $(python -c "import site; print(site.getsitepackages()[0])")/tflite_runtime/__init__.py << EOL
+# Mock TensorFlow Lite Runtime module
+import warnings
+warnings.warn("Using mock TensorFlow Lite Runtime. Object detection functionality will be limited.")
+
+class Interpreter:
+    def __init__(self, model_path=None, experimental_delegates=None):
+        self.model_path = model_path
+        self.tensor_details = []
+        self.input_details = []
+        self.output_details = []
+        print("Mock TensorFlow Lite Interpreter initialized")
+    
+    def allocate_tensors(self):
+        print("Mock allocate_tensors called")
+        return
+    
+    def get_input_details(self):
+        return self.input_details
+    
+    def get_output_details(self):
+        return self.output_details
+    
+    def set_tensor(self, tensor_index, value):
+        print(f"Mock set_tensor called with index {tensor_index}")
+        return
+    
+    def invoke(self):
+        print("Mock invoke called")
+        return
+    
+    def get_tensor(self, tensor_index):
+        print(f"Mock get_tensor called with index {tensor_index}")
+        import numpy as np
+        return np.zeros((1, 10, 4))  # Return empty detection results
+EOL
+    echo "Mock TensorFlow Lite runtime module created."
+}
+
 # Try to install tflite-runtime using pip
-pip install tflite-runtime || {
+if pip install tflite-runtime; then
+    echo "TensorFlow Lite runtime installed successfully."
+else
     echo "Standard tflite-runtime installation failed. Trying alternative methods..."
     
     # Try to find a compatible wheel based on Python version and architecture
     if [ "$python_version_for_wheel" = "311" ]; then
         echo "Using compatible wheel for Python 3.11..."
-        pip install --extra-index-url https://google-coral.github.io/py-repo/ tflite_runtime || echo "Warning: TensorFlow Lite installation failed. The system will continue without TensorFlow Lite support."
+        if pip install --extra-index-url https://google-coral.github.io/py-repo/ tflite_runtime; then
+            echo "TensorFlow Lite runtime installed successfully from Google Coral repository."
+        else
+            echo "Warning: TensorFlow Lite installation failed. Creating mock module for compatibility."
+            create_mock_tflite_runtime
+        fi
     elif [ "$python_version_for_wheel" = "39" ]; then
         echo "Using compatible wheel for Python 3.9..."
-        pip install https://github.com/google-coral/pycoral/releases/download/v2.0.0/tflite_runtime-2.5.0.post1-cp39-cp39-linux_aarch64.whl || echo "Warning: TensorFlow Lite installation failed. The system will continue without TensorFlow Lite support."
+        if pip install https://github.com/google-coral/pycoral/releases/download/v2.0.0/tflite_runtime-2.5.0.post1-cp39-cp39-linux_aarch64.whl; then
+            echo "TensorFlow Lite runtime installed successfully from wheel."
+        else
+            echo "Warning: TensorFlow Lite installation failed. Creating mock module for compatibility."
+            create_mock_tflite_runtime
+        fi
     else
-        echo "Warning: No compatible TensorFlow Lite wheel found for Python $python_version_for_wheel. The system will continue without TensorFlow Lite support."
+        echo "Warning: No compatible TensorFlow Lite wheel found for Python $python_version_for_wheel."
+        echo "Creating mock module for compatibility."
+        create_mock_tflite_runtime
     fi
-}
+fi
 
 # Install picamera or picamera2 based on camera type
 echo "Installing camera libraries..."
