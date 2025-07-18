@@ -11,9 +11,10 @@ echo ""
 INSTALL_TYPE="fresh"
 if [ -d "venv" ] && [ -f "config.json" ]; then
     echo "Existing installation detected."
-    echo "Would you like to update the existing installation? (y/n)"
+    echo "Would you like to update the existing installation? (Y/n)"
     read -r do_update
-    if [ "$do_update" = "y" ]; then
+    do_update=${do_update:-Y}
+    if [[ "$do_update" =~ ^[Yy]$ ]]; then
         INSTALL_TYPE="update"
         echo "Performing update..."
         
@@ -63,9 +64,10 @@ if [ -e /proc/device-tree/model ]; then
     fi
 else
     echo "Warning: This doesn't appear to be a Raspberry Pi. The system is optimized for Raspberry Pi hardware."
-    echo "Do you want to continue anyway? (y/n)"
+    echo "Do you want to continue anyway? (Y/n)"
     read -r continue_install
-    if [ "$continue_install" != "y" ]; then
+    continue_install=${continue_install:-Y}
+    if [[ ! "$continue_install" =~ ^[Yy]$ ]]; then
         echo "Installation cancelled."
         exit 1
     fi
@@ -75,9 +77,10 @@ fi
 # Check for Python 3.7+
 echo "Checking Python version..."
 if ! command -v python3 &> /dev/null; then
-    echo "Python 3 not found. Would you like to install Python 3.9? (y/n)"
+    echo "Python 3 not found. Would you like to install Python 3.9? (Y/n)"
     read -r install_python
-    if [ "$install_python" = "y" ]; then
+    install_python=${install_python:-Y}
+    if [[ "$install_python" =~ ^[Yy]$ ]]; then
         echo "Installing Python 3.9..."
         sudo apt-get update
         sudo apt-get install -y python3.9 python3.9-venv python3.9-dev python3-pip
@@ -96,9 +99,10 @@ python_version_minor=$(echo "$python_version" | cut -d. -f2)
 # Check if Python version is at least 3.7
 if [ "$python_version_major" -lt 3 ] || ([ "$python_version_major" -eq 3 ] && [ "$python_version_minor" -lt 7 ]); then
     echo "Python version $python_version detected. Version 3.7 or newer is required."
-    echo "Would you like to install Python 3.9? (y/n)"
+    echo "Would you like to install Python 3.9? (Y/n)"
     read -r install_python
-    if [ "$install_python" = "y" ]; then
+    install_python=${install_python:-Y}
+    if [[ "$install_python" =~ ^[Yy]$ ]]; then
         echo "Installing Python 3.9..."
         sudo apt-get update
         sudo apt-get install -y python3.9 python3.9-venv python3.9-dev python3-pip
@@ -133,9 +137,10 @@ if grep -q "^start_x=1" /boot/config.txt 2>/dev/null || grep -q "^gpu_mem=" /boo
     CAMERA_ENABLED=true
 else
     echo "Camera interface is not enabled in Raspberry Pi configuration."
-    echo "Would you like to enable it now? (y/n)"
+    echo "Would you like to enable it now? (Y/n)"
     read -r enable_camera
-    if [ "$enable_camera" = "y" ]; then
+    enable_camera=${enable_camera:-Y}
+    if [[ "$enable_camera" =~ ^[Yy]$ ]]; then
         echo "Enabling camera interface..."
         sudo raspi-config nonint do_camera 0
         # Also set minimum GPU memory for camera
@@ -171,7 +176,12 @@ else
     echo "  3. System needs to be rebooted after enabling camera"
     echo ""
     
-    if [ "$CAMERA_ENABLED" = true ] && [ "$INSTALL_TYPE" = "update" ]; then
+    # Check for saved camera configuration
+    if [ -f ".kiro/settings/camera_config" ]; then
+        source .kiro/settings/camera_config
+        echo "Found saved camera configuration: $CAMERA_TYPE"
+        echo "Using previously configured camera settings."
+    elif [ "$CAMERA_ENABLED" = true ] && [ "$INSTALL_TYPE" = "update" ]; then
         echo "Camera interface is enabled but module not detected."
         echo "Using previously configured camera settings."
     else
@@ -355,9 +365,10 @@ echo "=== Installation Complete ==="
 # Check if reboot is required
 if [ "$REBOOT_REQUIRED" = true ]; then
     echo "A reboot is required for the camera configuration changes to take effect."
-    echo "Would you like to reboot now? (y/n)"
+    echo "Would you like to reboot now? (Y/n)"
     read -r do_reboot
-    if [ "$do_reboot" = "y" ]; then
+    do_reboot=${do_reboot:-Y}
+    if [[ "$do_reboot" =~ ^[Yy]$ ]]; then
         echo "Rebooting system..."
         echo "After reboot, you can start the service with: sudo systemctl start cat-detection"
         echo "Thank you for installing the Cat Counter Detection System!"
