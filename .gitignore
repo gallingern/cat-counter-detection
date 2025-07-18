@@ -1,6 +1,6 @@
-# Ignore executable scripts to prevent permission conflicts
-install.sh
-update.sh
+# Note: install.sh and update.sh are tracked in git but permission changes are ignored
+# Use: git update-index --assume-unchanged install.sh update.sh
+# to ignore permission changes locally
 
 # Python
 __pycache__/
