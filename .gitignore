@@ -1,5 +1,6 @@
-# Ignore install.sh to prevent permission conflicts
+# Ignore executable scripts to prevent permission conflicts
 install.sh
+update.sh
 
 # Python
 __pycache__/

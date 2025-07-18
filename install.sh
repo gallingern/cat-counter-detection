@@ -27,7 +27,7 @@ sudo apt-get update
 
 # Install required packages
 echo "📦 Installing required packages..."
-sudo apt-get install -y python3-pip python3-opencv python3-flask python3-venv python3-full
+sudo apt-get install -y python3-pip python3-opencv python3-flask python3-venv python3-full libraspberrypi-bin libraspberrypi-dev
 
 # Create virtual environment
 echo "🐍 Creating Python virtual environment..."

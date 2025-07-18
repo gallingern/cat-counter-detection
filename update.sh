@@ -13,7 +13,19 @@ if [ ! -d ".git" ]; then
 else
     # Pull latest changes
     echo "📦 Pulling latest changes..."
-    git pull
+    if git pull; then
+        echo "✅ Git pull successful"
+        
+        # Reinstall dependencies if needed
+        echo "🔧 Checking if dependencies need updating..."
+        if [ -d "venv" ]; then
+            source venv/bin/activate
+            pip install -r requirements.txt 2>/dev/null || echo "No requirements.txt found, skipping pip install"
+        fi
+    else
+        echo "❌ Git pull failed"
+        echo "   Continuing with service restart..."
+    fi
 fi
 
 # Restart the service
