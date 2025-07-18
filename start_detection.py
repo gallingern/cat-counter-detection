@@ -22,6 +22,14 @@ def main():
     logger.info(f"Working directory: {os.getcwd()}")
     
     try:
+        # Initialize configuration
+        logger.info("Initializing configuration manager...")
+        config_manager = ConfigManager()
+        
+        # Initialize and start the detection pipeline
+        logger.info("Initializing detection pipeline...")
+        pipeline = DetectionPipeline(config_manager)
+        
         # Check if web app module exists
         web_app_path = os.path.join("cat_counter_detection", "web", "app.py")
         if os.path.exists(web_app_path):
@@ -30,15 +38,19 @@ def main():
             # Try to import the web app module
             try:
                 logger.info("Attempting to import web app module...")
-                from cat_counter_detection.web.app import app as web_app
+                from cat_counter_detection.web.app import CatCounterWebApp
                 logger.info("Web app module imported successfully")
+                
+                # Create web app with pipeline instance
+                logger.info("Creating web app with pipeline instance...")
+                web_app_instance = CatCounterWebApp(pipeline)
                 
                 # Start web server in a separate thread
                 import threading
                 def start_web_server():
                     logger.info("Starting web server on port 5000...")
                     try:
-                        web_app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
+                        web_app_instance.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
                     except Exception as e:
                         logger.error(f"Web server failed to start: {e}")
                         traceback.print_exc()
@@ -51,14 +63,6 @@ def main():
                 traceback.print_exc()
         else:
             logger.warning(f"Web app module not found at {web_app_path}")
-        
-        # Initialize configuration
-        logger.info("Initializing configuration manager...")
-        config_manager = ConfigManager()
-        
-        # Initialize and start the detection pipeline
-        logger.info("Initializing detection pipeline...")
-        pipeline = DetectionPipeline(config_manager)
         
         logger.info("Starting detection pipeline...")
         if not pipeline.start():

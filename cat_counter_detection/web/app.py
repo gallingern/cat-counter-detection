@@ -3,19 +3,27 @@
 import logging
 import json
 import os
+import sys
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
-from flask import Flask, render_template, jsonify, request, Response, send_file
-from ..detection_pipeline import DetectionPipeline
-from ..config_manager import ConfigManager
+from typing import Optional, Dict, Any, TYPE_CHECKING, Union
 
 # Handle Flask import gracefully
 try:
-    from flask import Flask
+    from flask import Flask, render_template, jsonify, request, Response, send_file
     FLASK_AVAILABLE = True
 except ImportError:
     FLASK_AVAILABLE = False
     Flask = None
+    render_template = None
+    jsonify = None
+    request = None
+    Response = None
+    send_file = None
+
+# Use TYPE_CHECKING to avoid circular imports
+if TYPE_CHECKING:
+    from ..detection_pipeline import DetectionPipeline
+    from ..config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +31,7 @@ logger = logging.getLogger(__name__)
 class CatCounterWebApp:
     """Flask web application for the cat counter detection system."""
     
-    def __init__(self, pipeline: Optional[DetectionPipeline] = None):
+    def __init__(self, pipeline=None):
         """Initialize web application."""
         if not FLASK_AVAILABLE:
             raise ImportError("Flask is not available. Please install Flask to use the web interface.")
@@ -32,17 +40,37 @@ class CatCounterWebApp:
                         template_folder='templates',
                         static_folder='static')
         
-        # Initialize pipeline
-        self.pipeline = pipeline or DetectionPipeline()
+        # Store pipeline reference
+        self.pipeline = pipeline
         
         # Configure Flask app
         self.app.config['SECRET_KEY'] = 'cat-counter-secret-key-change-in-production'
         self.app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
         
-        # Setup routes
-        self._setup_routes()
+        # Setup routes only if pipeline is provided
+        if self.pipeline:
+            self._setup_routes()
+            logger.info("Cat Counter web application initialized with pipeline")
+        else:
+            logger.warning("Cat Counter web application initialized without pipeline - limited functionality")
+            self._setup_basic_routes()
+    
+    def _setup_basic_routes(self):
+        """Setup basic Flask routes when no pipeline is available."""
         
-        logger.info("Cat Counter web application initialized")
+        @self.app.route('/')
+        def index():
+            """Basic index page."""
+            return render_template('index.html') if render_template else "Cat Counter Detection System"
+        
+        @self.app.route('/status')
+        def status():
+            """Basic status page."""
+            return jsonify({
+                'status': 'running',
+                'message': 'Web server is running but pipeline is not available',
+                'time': datetime.now().isoformat()
+            }) if jsonify else '{"status": "running"}'
     
     def _setup_routes(self):
         """Setup Flask routes."""
