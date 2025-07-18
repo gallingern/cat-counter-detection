@@ -1,9 +1,0 @@
-opencv-python==4.8.1.78
-numpy==1.24.3
-Pillow==10.0.1
-Flask==2.3.3
-requests==2.31.0
-python-dotenv==1.0.0
-psutil==5.9.5
-tflite-runtime==2.13.0
-picamera2==0.3.12

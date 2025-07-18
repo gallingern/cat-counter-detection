@@ -1,1 +1,0 @@
-"""Web interface components for the cat detection system."""
