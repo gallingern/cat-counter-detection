@@ -7,6 +7,17 @@ echo "=== Simple Cat Detection System Installation ==="
 echo "This script will install the necessary dependencies and set up the system."
 echo ""
 
+# Check if this is the latest version
+echo "🔍 Checking script version..."
+if grep -q "python3-picamera" "$0"; then
+    echo "❌ This appears to be an old version of the install script."
+    echo "Please run: git pull origin main"
+    echo "Then try again."
+    exit 1
+fi
+echo "✅ Using latest version of install script"
+echo ""
+
 # Check if running on Raspberry Pi
 if ! grep -q "Raspberry Pi" /proc/device-tree/model 2>/dev/null; then
     echo "⚠️  Warning: This doesn't appear to be a Raspberry Pi."
@@ -29,12 +40,35 @@ sudo apt-get install -y python3-pip python3-opencv python3-flask python3-venv py
 
 # Create virtual environment
 echo "🐍 Creating Python virtual environment..."
+if [ -d "venv" ]; then
+    echo "Removing existing virtual environment..."
+    rm -rf venv
+fi
+
 python3 -m venv venv
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to create virtual environment"
+    echo "Trying alternative method..."
+    python3 -m pip install --user virtualenv
+    python3 -m virtualenv venv
+fi
 
 # Activate virtual environment and install dependencies
 echo "🐍 Installing Python dependencies..."
 source venv/bin/activate
-pip install picamera opencv-python flask numpy
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to activate virtual environment"
+    exit 1
+fi
+
+echo "Installing picamera..."
+pip install picamera
+echo "Installing opencv-python..."
+pip install opencv-python
+echo "Installing flask..."
+pip install flask
+echo "Installing numpy..."
+pip install numpy
 
 # Enable camera
 echo "📷 Enabling camera module..."
@@ -78,16 +112,16 @@ chmod +x update.sh
 
 # Test the installation
 echo "🧪 Testing installation..."
-if python3 -c "import cv2, flask; print('✅ Dependencies installed successfully')" 2>/dev/null; then
-    echo "✅ Installation test passed"
+if source venv/bin/activate && python -c "import cv2, flask, picamera; print('✅ All dependencies installed successfully')" 2>/dev/null; then
+    echo "✅ Virtual environment test passed"
 else
-    echo "❌ Installation test failed - checking virtual environment..."
-    if source venv/bin/activate && python -c "import cv2, flask; print('✅ Virtual environment test passed')" 2>/dev/null; then
-        echo "✅ Virtual environment is working correctly"
-    else
-        echo "❌ Virtual environment test failed"
-        echo "Please check the installation manually"
-    fi
+    echo "❌ Virtual environment test failed"
+    echo "Testing individual packages..."
+    source venv/bin/activate
+    python -c "import cv2; print('✅ OpenCV installed')" 2>/dev/null || echo "❌ OpenCV failed"
+    python -c "import flask; print('✅ Flask installed')" 2>/dev/null || echo "❌ Flask failed"
+    python -c "import picamera; print('✅ Picamera installed')" 2>/dev/null || echo "❌ Picamera failed"
+    echo "Please check the installation manually"
 fi
 
 # Print completion message
