@@ -55,10 +55,39 @@ if [ "$(echo "$python_version < 3.7" | bc)" -eq 1 ]; then
 fi
 echo "Python $python_version detected. ✓"
 
+# Check for camera prerequisites
+echo "Checking for camera prerequisites..."
+
+# Check if camera interface is enabled
+if ! command -v vcgencmd &> /dev/null; then
+    echo "Camera utilities not found. Installing camera prerequisites..."
+    sudo apt-get update
+    sudo apt-get install -y libraspberrypi-bin
+fi
+
+# Check if camera is enabled in config
+if ! grep -q "^start_x=1" /boot/config.txt 2>/dev/null; then
+    echo "Camera interface is not enabled in Raspberry Pi configuration."
+    echo "Would you like to enable it now? (y/n)"
+    read -r enable_camera
+    if [ "$enable_camera" = "y" ]; then
+        echo "Enabling camera interface..."
+        sudo raspi-config nonint do_camera 0
+        echo "Camera interface enabled. A reboot will be required after installation."
+        REBOOT_REQUIRED=true
+    else
+        echo "Warning: Camera interface not enabled. The system may not work properly."
+    fi
+fi
+
 # Check for camera module
 echo "Checking for camera module..."
 if ! vcgencmd get_camera | grep -q "detected=1"; then
-    echo "Warning: Camera module not detected. Please ensure your camera is properly connected."
+    echo "Warning: Camera module not detected. This could be due to:"
+    echo "  - Camera not properly connected"
+    echo "  - Camera ribbon cable not properly seated"
+    echo "  - Camera module hardware issue"
+    echo ""
     echo "Do you want to continue anyway? (y/n)"
     read -r continue_install
     if [ "$continue_install" != "y" ]; then
