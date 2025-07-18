@@ -7,6 +7,31 @@ echo "=== Cat Counter Detection System Installer ==="
 echo "This script will install the Cat Counter Detection system on your Raspberry Pi."
 echo ""
 
+# Check if this is an update or a fresh install
+INSTALL_TYPE="fresh"
+if [ -d "venv" ] && [ -f "config.json" ]; then
+    echo "Existing installation detected."
+    echo "Would you like to update the existing installation? (y/n)"
+    read -r do_update
+    if [ "$do_update" = "y" ]; then
+        INSTALL_TYPE="update"
+        echo "Performing update..."
+        
+        # Check for git repository to pull latest changes
+        if [ -d ".git" ]; then
+            echo "Git repository detected. Pulling latest changes..."
+            git stash  # Save any local changes
+            git pull   # Pull latest changes
+            echo "Repository updated to latest version."
+        fi
+    else
+        echo "Continuing with fresh installation..."
+    fi
+fi
+
+echo "Installation type: $INSTALL_TYPE"
+echo ""
+
 # Initialize reboot flag
 REBOOT_REQUIRED=false
 
@@ -202,12 +227,22 @@ sudo apt-get install -y python3-pip python3-opencv python3-venv python3-full lib
 
 # Set up virtual environment
 echo "Setting up Python virtual environment..."
-python3 -m venv venv
-source venv/bin/activate
-
-# Install Python dependencies
-echo "Installing Python dependencies in virtual environment..."
-pip install --upgrade pip
+if [ "$INSTALL_TYPE" = "update" ] && [ -d "venv" ]; then
+    echo "Using existing virtual environment..."
+    source venv/bin/activate
+    
+    # Update pip in the virtual environment
+    echo "Updating pip in virtual environment..."
+    pip install --upgrade pip
+else
+    echo "Creating new virtual environment..."
+    python3 -m venv venv
+    source venv/bin/activate
+    
+    # Install latest pip in the new virtual environment
+    echo "Installing latest pip in virtual environment..."
+    pip install --upgrade pip
+fi
 
 # Create a modified requirements file without the problematic packages
 echo "Creating modified requirements file..."
@@ -217,7 +252,13 @@ mv requirements_modified_temp.txt requirements_modified.txt
 
 # Install the modified requirements
 echo "Installing dependencies from modified requirements file..."
-pip install -r requirements_modified.txt
+if [ "$INSTALL_TYPE" = "update" ]; then
+    echo "Updating Python dependencies..."
+    pip install --upgrade -r requirements_modified.txt
+else
+    echo "Installing Python dependencies..."
+    pip install -r requirements_modified.txt
+fi
 
 # Install TensorFlow Lite runtime with the correct version for Raspberry Pi
 echo "Installing TensorFlow Lite runtime..."
