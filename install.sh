@@ -126,9 +126,9 @@ fi
 # Check camera configuration
 echo "Checking camera configuration..."
 
-# First, check if camera is enabled in config
+# First, check if camera is enabled in config - need to check both start_x=1 and gpu_mem settings
 CAMERA_ENABLED=false
-if grep -q "^start_x=1" /boot/config.txt 2>/dev/null; then
+if grep -q "^start_x=1" /boot/config.txt 2>/dev/null || grep -q "^gpu_mem=" /boot/config.txt 2>/dev/null; then
     echo "Camera interface is enabled in configuration. ✓"
     CAMERA_ENABLED=true
 else
@@ -138,6 +138,11 @@ else
     if [ "$enable_camera" = "y" ]; then
         echo "Enabling camera interface..."
         sudo raspi-config nonint do_camera 0
+        # Also set minimum GPU memory for camera
+        if ! grep -q "^gpu_mem=" /boot/config.txt; then
+            echo "Setting minimum GPU memory for camera..."
+            echo "gpu_mem=128" | sudo tee -a /boot/config.txt
+        fi
         CAMERA_ENABLED=true
         REBOOT_REQUIRED=true
     else
@@ -283,16 +288,26 @@ fi
 
 # Install TensorFlow Lite runtime with the correct version for Raspberry Pi
 echo "Installing TensorFlow Lite runtime..."
-if [ "$PI_TYPE" = "zero" ] || [ "$PI_TYPE" = "zero2" ]; then
-    # For Pi Zero and Zero 2
-    pip install https://github.com/google-coral/pycoral/releases/download/v2.0.0/tflite_runtime-2.5.0.post1-cp39-cp39-linux_aarch64.whl
-elif [ "$PI_TYPE" = "pi3" ]; then
-    # For Pi 3
-    pip install https://github.com/google-coral/pycoral/releases/download/v2.0.0/tflite_runtime-2.5.0.post1-cp39-cp39-linux_aarch64.whl
-else
-    # For Pi 4, Pi 5, and other newer models
-    pip install tflite-runtime
-fi
+
+# Get Python version for wheel selection
+python_version_for_wheel=$(python3 -c 'import sys; print(f"{sys.version_info.major}{sys.version_info.minor}")')
+echo "Detected Python version for wheel: $python_version_for_wheel"
+
+# Try to install tflite-runtime using pip
+pip install tflite-runtime || {
+    echo "Standard tflite-runtime installation failed. Trying alternative methods..."
+    
+    # Try to find a compatible wheel based on Python version and architecture
+    if [ "$python_version_for_wheel" = "311" ]; then
+        echo "Using compatible wheel for Python 3.11..."
+        pip install --extra-index-url https://google-coral.github.io/py-repo/ tflite_runtime || echo "Warning: TensorFlow Lite installation failed. The system will continue without TensorFlow Lite support."
+    elif [ "$python_version_for_wheel" = "39" ]; then
+        echo "Using compatible wheel for Python 3.9..."
+        pip install https://github.com/google-coral/pycoral/releases/download/v2.0.0/tflite_runtime-2.5.0.post1-cp39-cp39-linux_aarch64.whl || echo "Warning: TensorFlow Lite installation failed. The system will continue without TensorFlow Lite support."
+    else
+        echo "Warning: No compatible TensorFlow Lite wheel found for Python $python_version_for_wheel. The system will continue without TensorFlow Lite support."
+    fi
+}
 
 # Install picamera or picamera2 based on camera type
 echo "Installing camera libraries..."
