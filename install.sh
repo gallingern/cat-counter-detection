@@ -208,7 +208,39 @@ source venv/bin/activate
 # Install Python dependencies
 echo "Installing Python dependencies in virtual environment..."
 pip install --upgrade pip
-pip install -r requirements.txt
+
+# Create a modified requirements file without the problematic packages
+echo "Creating modified requirements file..."
+grep -v "tflite-runtime" requirements.txt > requirements_modified.txt
+grep -v "picamera2" requirements_modified.txt > requirements_modified_temp.txt
+mv requirements_modified_temp.txt requirements_modified.txt
+
+# Install the modified requirements
+echo "Installing dependencies from modified requirements file..."
+pip install -r requirements_modified.txt
+
+# Install TensorFlow Lite runtime with the correct version for Raspberry Pi
+echo "Installing TensorFlow Lite runtime..."
+if [ "$PI_TYPE" = "zero" ] || [ "$PI_TYPE" = "zero2" ]; then
+    # For Pi Zero and Zero 2
+    pip install https://github.com/google-coral/pycoral/releases/download/v2.0.0/tflite_runtime-2.5.0.post1-cp39-cp39-linux_aarch64.whl
+elif [ "$PI_TYPE" = "pi3" ]; then
+    # For Pi 3
+    pip install https://github.com/google-coral/pycoral/releases/download/v2.0.0/tflite_runtime-2.5.0.post1-cp39-cp39-linux_aarch64.whl
+else
+    # For Pi 4, Pi 5, and other newer models
+    pip install tflite-runtime
+fi
+
+# Install picamera or picamera2 based on camera type
+echo "Installing camera libraries..."
+if [ "$CAMERA_TYPE" = "v1" ]; then
+    # For Camera Module v1, use picamera
+    pip install picamera
+else
+    # For newer camera modules, try picamera2
+    pip install picamera2 || echo "Warning: picamera2 installation failed. You may need to install it manually."
+fi
 
 # Set up configuration
 echo "Setting up configuration..."
