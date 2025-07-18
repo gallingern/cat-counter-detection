@@ -22,6 +22,22 @@ git pull || {
     exit 1
 }
 
+# Fix any retry_on_error decorator issues in Python files
+echo "Fixing retry_on_error decorator issues in Python files..."
+find cat_counter_detection -name "*.py" -type f -exec grep -l "retry_on_error" {} \; | while read file; do
+    echo "Checking $file for retry_on_error issues..."
+    if grep -q "max_attempts" "$file"; then
+        echo "Fixing retry_on_error in $file..."
+        # Replace max_attempts with max_retries
+        sed -i 's/@retry_on_error(max_attempts=/@retry_on_error(max_retries=/g' "$file"
+        # Replace delay= with delay_seconds=
+        sed -i 's/delay=/delay_seconds=/g' "$file"
+        # Replace exceptions= with component_name=
+        sed -i 's/exceptions=([^)]*)/component_name="auto_fixed"/g' "$file"
+        echo "✓ Fixed $file"
+    fi
+done
+
 # Update systemd service file
 echo "Updating systemd service file..."
 sudo tee /etc/systemd/system/cat-detection.service > /dev/null << EOL
