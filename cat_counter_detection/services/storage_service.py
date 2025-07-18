@@ -504,7 +504,7 @@ class StorageService(StorageServiceInterface):
             return False
     
     @with_error_handling("storage_service", ErrorSeverity.HIGH)
-    @retry_on_error(max_attempts=3, delay=1.0, exceptions=(sqlite3.Error, IOError))
+    @retry_on_error(max_retries=3, delay_seconds=1.0, component_name="storage_service")
     def save_detection(self, detection: ValidDetection, image: Any) -> str:
         """Save detection and return image path with comprehensive error handling."""
         start_time = datetime.now()

@@ -47,15 +47,17 @@ def with_error_handling(component: str, severity: ErrorSeverity = ErrorSeverity.
     return decorator
 
 
-def retry_on_error(max_attempts: int = 3, delay: float = 1.0, backoff_factor: float = 1.0,
-                  exceptions: Optional[List[Type[Exception]]] = None):
+def retry_on_error(max_retries: int = 3, delay_seconds: float = 1.0, 
+                  backoff_factor: float = 2.0, component_name: str = "unknown",
+                  severity: ErrorSeverity = ErrorSeverity.MEDIUM):
     """Decorator to retry a function on failure with exponential backoff.
     
     Args:
-        max_attempts: Maximum number of retry attempts
-        delay: Initial delay between retries in seconds
+        max_retries: Maximum number of retry attempts
+        delay_seconds: Initial delay between retries in seconds
         backoff_factor: Factor to increase delay with each retry
-        exceptions: List of exception types to catch and retry
+        component_name: Name of the component for error tracking
+        severity: Severity level of the error
         
     Returns:
         Decorated function with retry logic
@@ -63,26 +65,31 @@ def retry_on_error(max_attempts: int = 3, delay: float = 1.0, backoff_factor: fl
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            exceptions_to_catch = exceptions or (Exception,)
-            last_exception = None
+            retries = 0
+            current_delay = delay_seconds
             
-            for attempt in range(1, max_attempts + 1):
+            while retries <= max_retries:
                 try:
                     return func(*args, **kwargs)
-                except exceptions_to_catch as e:
-                    last_exception = e
-                    logger.warning(f"Attempt {attempt}/{max_attempts} failed for {func.__name__}: {e}")
+                except Exception as e:
+                    retries += 1
                     
-                    # Don't sleep on the last attempt
-                    if attempt < max_attempts:
-                        sleep_time = delay * (backoff_factor ** (attempt - 1))
-                        logger.debug(f"Retrying in {sleep_time:.2f} seconds")
-                        time.sleep(sleep_time)
+                    # Log and handle error
+                    error_msg = f"Error in {func.__name__} (retry {retries}/{max_retries}): {e}"
+                    if retries >= max_retries:
+                        global_error_handler.handle_error(component_name, e, severity)
+                        if severity == ErrorSeverity.CRITICAL:
+                            raise
+                        return None
+                    
+                    # Log warning for retry
+                    logger.warning(error_msg)
+                    
+                    # Wait before retry with exponential backoff
+                    time.sleep(current_delay)
+                    current_delay *= backoff_factor
             
-            # If we get here, all attempts failed
-            logger.error(f"All {max_attempts} attempts failed for {func.__name__}")
-            if last_exception:
-                raise last_exception
+            return None  # Should not reach here, but just in case
         return wrapper
     return decorator
 
