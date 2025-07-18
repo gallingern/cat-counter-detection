@@ -106,7 +106,8 @@ sudo systemctl daemon-reload
 sudo systemctl enable cat-detection
 sudo systemctl start cat-detection
 
-# Make scripts executable
+# Make scripts executable (this only changes file permissions, not content)
+echo "🔧 Making scripts executable..."
 chmod +x start_detection.py
 chmod +x update.sh
 
