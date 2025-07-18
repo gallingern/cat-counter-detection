@@ -108,11 +108,18 @@ mkdir -p logs
 # Install required packages
 echo "Installing required packages..."
 sudo apt-get update
-sudo apt-get install -y python3-pip python3-opencv libatlas-base-dev libhdf5-dev libhdf5-serial-dev libjasper-dev libqtgui4 libqt4-test
+# Updated package list for newer Raspberry Pi OS versions
+sudo apt-get install -y python3-pip python3-opencv python3-venv python3-full libatlas-base-dev libhdf5-dev
+
+# Set up virtual environment
+echo "Setting up Python virtual environment..."
+python3 -m venv venv
+source venv/bin/activate
 
 # Install Python dependencies
-echo "Installing Python dependencies..."
-pip3 install -r requirements.txt
+echo "Installing Python dependencies in virtual environment..."
+pip install --upgrade pip
+pip install -r requirements.txt
 
 # Set up configuration
 echo "Setting up configuration..."
@@ -130,7 +137,7 @@ Description=Cat Counter Detection Service
 After=network.target
 
 [Service]
-ExecStart=$(which python3) $(pwd)/cat_counter_detection/detection_pipeline.py
+ExecStart=$(pwd)/venv/bin/python $(pwd)/cat_counter_detection/detection_pipeline.py
 WorkingDirectory=$(pwd)
 StandardOutput=inherit
 StandardError=inherit
