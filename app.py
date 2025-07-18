@@ -76,6 +76,12 @@ def process_frames():
     
     while processing:
         try:
+            # Check if camera and detector are available
+            if camera is None or detector is None:
+                logger.error("Camera or detector not initialized")
+                time.sleep(1.0)
+                continue
+            
             # Get a frame from the camera
             frame = camera.get_frame()
             if frame is None:
@@ -105,18 +111,27 @@ def generate_frames():
     global last_annotated_frame
     
     while True:
-        # Wait for a frame to be available
-        if last_annotated_frame is None:
+        try:
+            # Wait for a frame to be available
+            if last_annotated_frame is None:
+                time.sleep(0.1)
+                continue
+            
+            # Convert to JPEG
+            ret, jpeg = cv2.imencode('.jpg', last_annotated_frame)
+            if not ret:
+                logger.error("Failed to encode frame to JPEG")
+                time.sleep(0.1)
+                continue
+                
+            frame_bytes = jpeg.tobytes()
+            
+            # Yield the frame in MJPEG format
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        except Exception as e:
+            logger.error(f"Error generating frame: {e}")
             time.sleep(0.1)
-            continue
-        
-        # Convert to JPEG
-        ret, jpeg = cv2.imencode('.jpg', last_annotated_frame)
-        frame_bytes = jpeg.tobytes()
-        
-        # Yield the frame in MJPEG format
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
 @app.route('/')
 def index():
@@ -132,12 +147,14 @@ def video_feed():
 @app.route('/status')
 def status():
     """Return system status as JSON."""
-    global frame_count, detection_count
+    global frame_count, detection_count, start_time
+    
+    uptime = time.time() - start_time if start_time else 0
     
     return {
         'frame_count': frame_count,
         'detection_count': detection_count,
-        'uptime': time.time() - start_time
+        'uptime': uptime
     }
 
 def start_app():

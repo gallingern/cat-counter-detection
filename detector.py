@@ -31,8 +31,11 @@ class CatDetector:
             # Try the configured path first
             if os.path.exists(self.cascade_path):
                 self.cascade = cv2.CascadeClassifier(self.cascade_path)
-                logger.info(f"Loaded cascade from {self.cascade_path}")
-                return
+                if self.cascade.empty():
+                    logger.error(f"Failed to load cascade from {self.cascade_path}")
+                else:
+                    logger.info(f"Loaded cascade from {self.cascade_path}")
+                    return
             
             # Try the default OpenCV installation paths
             opencv_paths = [
@@ -45,11 +48,14 @@ class CatDetector:
             for path in opencv_paths:
                 if os.path.exists(path):
                     self.cascade = cv2.CascadeClassifier(path)
-                    logger.info(f"Loaded cascade from {path}")
-                    return
+                    if not self.cascade.empty():
+                        logger.info(f"Loaded cascade from {path}")
+                        return
+                    else:
+                        logger.warning(f"Failed to load cascade from {path}")
             
-            logger.error("Could not find cat cascade file")
-            raise FileNotFoundError("Cat cascade file not found")
+            logger.error("Could not find or load cat cascade file")
+            raise FileNotFoundError("Cat cascade file not found or invalid")
             
         except Exception as e:
             logger.error(f"Error loading cascade: {e}")
@@ -67,6 +73,11 @@ class CatDetector:
                 - detections is a list of (x, y, w, h) tuples
                 - annotated_frame is the input frame with detection boxes drawn
         """
+        # Check if cascade is loaded
+        if self.cascade is None or self.cascade.empty():
+            logger.error("Cascade classifier not loaded")
+            return [], frame
+        
         # Skip detection if it's too soon since the last one
         current_time = time.time()
         if current_time - self.last_detection_time < self.detection_interval:

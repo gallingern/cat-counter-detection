@@ -48,12 +48,21 @@ class Camera:
     def stop(self):
         """Stop the camera capture thread."""
         self.running = False
-        if hasattr(self, 'thread'):
-            self.thread.join(timeout=2.0)
         
+        # Wait for thread to finish
+        if hasattr(self, 'thread') and self.thread.is_alive():
+            self.thread.join(timeout=2.0)
+            if self.thread.is_alive():
+                logger.warning("Camera thread did not stop gracefully")
+        
+        # Close camera
         if self.camera:
-            self.camera.close()
-            self.camera = None
+            try:
+                self.camera.close()
+            except Exception as e:
+                logger.error(f"Error closing camera: {e}")
+            finally:
+                self.camera = None
         
         logger.info("Camera stopped")
     
