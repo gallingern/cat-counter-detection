@@ -98,6 +98,13 @@ class Camera:
                 # Clear the stream for the next frame
                 raw_capture.truncate(0)
                 
+        except OSError as e:
+            if "libmmal.so" in str(e) or "libbcm_host.so" in str(e):
+                logger.error(f"Raspberry Pi firmware libraries missing: {e}")
+                logger.error("Please install: sudo apt-get install libraspberrypi-bin libraspberrypi-dev libraspberrypi0")
+            else:
+                logger.error(f"Camera hardware error: {e}")
+            self.running = False
         except Exception as e:
             logger.error(f"Error in camera capture loop: {e}")
             self.running = False

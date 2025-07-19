@@ -190,3 +190,6 @@ def start_app():
 
 if __name__ == '__main__':
     start_app()
+elif __name__ == 'app':
+    # When run as a module, start the app
+    start_app()

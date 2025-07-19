@@ -27,7 +27,7 @@ sudo apt-get update
 
 # Install required packages
 echo "📦 Installing required packages..."
-sudo apt-get install -y python3-pip python3-opencv python3-flask python3-venv python3-full libraspberrypi-bin libraspberrypi-dev
+sudo apt-get install -y python3-pip python3-opencv python3-flask python3-venv python3-full libraspberrypi-bin libraspberrypi-dev libraspberrypi0
 
 # Create virtual environment
 echo "🐍 Creating Python virtual environment..."
@@ -80,12 +80,13 @@ Description=Simple Cat Detection Service
 After=network.target
 
 [Service]
-ExecStart=$(pwd)/venv/bin/python $(pwd)/start_detection.py
+ExecStart=$(pwd)/venv/bin/python -m app
 WorkingDirectory=$(pwd)
 StandardOutput=inherit
 StandardError=inherit
 Restart=always
 User=$USER
+Environment=PYTHONPATH=$(pwd)
 
 [Install]
 WantedBy=multi-user.target
