@@ -121,12 +121,8 @@ fi
 # Enable camera (only if not already enabled)
 echo "📷 Checking camera module..."
 
-# Determine config file location (new Raspberry Pi OS uses /boot/firmware/config.txt)
+# Use the standard config file location for Raspberry Pi OS 64-bit
 CONFIG_FILE="/boot/firmware/config.txt"
-if [ ! -f "$CONFIG_FILE" ]; then
-    CONFIG_FILE="/boot/config.txt"
-fi
-
 echo "Using config file: $CONFIG_FILE"
 
 # Check if camera settings are already enabled
