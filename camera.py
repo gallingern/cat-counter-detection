@@ -68,8 +68,8 @@ class Camera:
     def _capture_loop(self):
         """Main capture loop that runs in a separate thread."""
         try:
-            # Initialize the camera using OpenCV
-            self.camera = cv2.VideoCapture(0)
+            # Initialize the camera using OpenCV with libcamera backend
+            self.camera = cv2.VideoCapture(0, cv2.CAP_V4L2)
             
             # Set camera properties
             self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.resolution[0])
@@ -78,7 +78,10 @@ class Camera:
             
             # Check if camera opened successfully
             if not self.camera.isOpened():
-                raise RuntimeError("Failed to open camera")
+                # Try alternative approach with different backend
+                self.camera = cv2.VideoCapture(0, cv2.CAP_ANY)
+                if not self.camera.isOpened():
+                    raise RuntimeError("Failed to open camera")
             
             logger.info("Camera opened successfully")
             
@@ -86,12 +89,20 @@ class Camera:
             time.sleep(2)
             
             # Capture frames continuously
+            consecutive_failures = 0
             while self.running:
                 ret, frame = self.camera.read()
                 if not ret:
-                    logger.warning("Failed to read frame from camera")
+                    consecutive_failures += 1
+                    if consecutive_failures <= 5:
+                        logger.warning(f"Failed to read frame from camera (attempt {consecutive_failures})")
+                    elif consecutive_failures == 6:
+                        logger.error("Multiple consecutive camera read failures - camera may not be accessible")
                     time.sleep(0.1)
                     continue
+                
+                # Reset failure counter on successful read
+                consecutive_failures = 0
                 
                 # Apply rotation if needed
                 if self.rotation == 90:
