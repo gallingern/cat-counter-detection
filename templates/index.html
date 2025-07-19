@@ -4,80 +4,230 @@
     <title>Simple Cat Detector</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #e8e8e8;
+            min-height: 100vh;
             padding: 20px;
-            text-align: center;
-            background-color: #f5f5f5;
         }
-        h1 {
-            color: #333;
-        }
+        
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background: rgba(26, 26, 46, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
+        
+        h1 {
+            color: #64ffda;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(100, 255, 218, 0.3);
+            font-weight: 300;
+        }
+        
+        .subtitle {
+            color: #8892b0;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+        
         .video-container {
-            margin: 20px 0;
+            margin: 30px 0;
             position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
+        
         .video-feed {
             width: 100%;
             max-width: 640px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 12px;
+            border: 2px solid rgba(100, 255, 218, 0.3);
+            background: #0a0a0a;
         }
+        
         .status {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #f0f0f0;
-            border-radius: 4px;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(15, 52, 96, 0.6);
+            border-radius: 12px;
+            border: 1px solid rgba(100, 255, 218, 0.2);
+            backdrop-filter: blur(5px);
         }
+        
+        .status h3 {
+            color: #64ffda;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            font-weight: 400;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .status-item {
+            background: rgba(26, 26, 46, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        
+        .status-label {
+            color: #8892b0;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .status-value {
+            color: #64ffda;
+            font-size: 1.5em;
+            font-weight: 600;
+            text-shadow: 0 0 10px rgba(100, 255, 218, 0.3);
+        }
+        
         .footer {
-            margin-top: 20px;
-            font-size: 0.8em;
-            color: #666;
+            margin-top: 30px;
+            text-align: center;
+            color: #8892b0;
+            font-size: 0.9em;
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(100, 255, 218, 0.3);
+            border-radius: 50%;
+            border-top-color: #64ffda;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Simple Cat Detector</h1>
-        <p>Live feed from Raspberry Pi Camera with cat detection</p>
+        <h1>🐱 Simple Cat Detector</h1>
+        <p class="subtitle">Live feed from Raspberry Pi Camera with AI-powered cat detection</p>
         
         <div class="video-container">
             <img src="{{ url_for('video_feed') }}" class="video-feed" alt="Video Feed">
         </div>
         
-        <div class="status" id="status">
-            <p>Status: Running</p>
-            <p>Frames processed: <span id="frame-count">0</span></p>
-            <p>Cats detected: <span id="detection-count">0</span></p>
-            <p>Uptime: <span id="uptime">0</span> seconds</p>
+        <div class="status">
+            <h3>📊 System Status</h3>
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="status-label">Status</div>
+                    <div class="status-value pulse">🟢 Running</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Frames Processed</div>
+                    <div class="status-value" id="frame-count">0</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Cats Detected</div>
+                    <div class="status-value" id="detection-count">0</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Uptime</div>
+                    <div class="status-value" id="uptime">0s</div>
+                </div>
+            </div>
         </div>
     </div>
     
     <div class="footer">
-        <p>Simple Cat Detection System for Raspberry Pi</p>
+        <p>🚀 Simple Cat Detection System for Raspberry Pi</p>
+        <p>Powered by OpenCV & AI</p>
     </div>
 
     <script>
-        // Update status every 5 seconds
+        // Update status every 3 seconds
         setInterval(function() {
             fetch('/status')
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('frame-count').textContent = data.frame_count;
-                    document.getElementById('detection-count').textContent = data.detection_count;
-                    document.getElementById('uptime').textContent = Math.round(data.uptime);
+                    document.getElementById('frame-count').textContent = data.frame_count.toLocaleString();
+                    document.getElementById('detection-count').textContent = data.detection_count.toLocaleString();
+                    
+                    // Format uptime nicely
+                    const uptime = Math.round(data.uptime);
+                    if (uptime < 60) {
+                        document.getElementById('uptime').textContent = uptime + 's';
+                    } else if (uptime < 3600) {
+                        document.getElementById('uptime').textContent = Math.floor(uptime / 60) + 'm ' + (uptime % 60) + 's';
+                    } else {
+                        const hours = Math.floor(uptime / 3600);
+                        const minutes = Math.floor((uptime % 3600) / 60);
+                        document.getElementById('uptime').textContent = hours + 'h ' + minutes + 'm';
+                    }
                 })
-                .catch(error => console.error('Error fetching status:', error));
-        }, 5000);
+                .catch(error => {
+                    console.error('Error fetching status:', error);
+                    document.querySelector('.status-value.pulse').textContent = '🔴 Error';
+                });
+        }, 3000);
+        
+        // Add loading animation for video feed
+        document.querySelector('.video-feed').addEventListener('load', function() {
+            this.style.opacity = '1';
+        });
+        
+        document.querySelector('.video-feed').addEventListener('error', function() {
+            this.style.opacity = '0.5';
+            this.alt = 'Video feed not available';
+        });
     </script>
 </body>
 </html>
