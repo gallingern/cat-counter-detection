@@ -101,8 +101,6 @@ fi
 
 # Only install dependencies if fresh install or forced
 if [ "$FRESH_INSTALL" = true ] || [ "$1" = "--force-reinstall" ]; then
-    echo "Installing picamera..."
-    pip install picamera
     echo "Installing opencv-python..."
     pip install opencv-python
     echo "Installing flask..."
@@ -112,9 +110,9 @@ if [ "$FRESH_INSTALL" = true ] || [ "$1" = "--force-reinstall" ]; then
 else
     echo "Checking Python dependencies..."
     # Quick check if packages are installed
-    if ! python -c "import cv2, flask, picamera, numpy" 2>/dev/null; then
+    if ! python -c "import cv2, flask, numpy" 2>/dev/null; then
         echo "⚠️  Some dependencies missing, installing..."
-        pip install picamera opencv-python flask numpy
+        pip install opencv-python flask numpy
     else
         echo "✅ All Python dependencies already installed"
     fi
@@ -178,49 +176,14 @@ chmod +x install.sh
 echo "🧪 Testing installation..."
 source venv/bin/activate
 
-# Check for MMAL libraries and fix library paths
-echo "🔍 Checking MMAL libraries..."
-MMAL_FOUND=false
-
-# Check common locations
-for lib_path in "/opt/vc/lib/libmmal.so" "/usr/lib/libmmal.so" "/usr/lib/arm-linux-gnueabihf/libmmal.so"; do
-    if [ -f "$lib_path" ]; then
-        echo "✅ Found MMAL library at: $lib_path"
-        MMAL_FOUND=true
-        break
-    fi
-done
-
-if [ "$MMAL_FOUND" = false ]; then
-    echo "⚠️  MMAL libraries not found, attempting to fix..."
-    
-    # Try to install/reinstall Raspberry Pi firmware packages
-    sudo apt-get install -y --reinstall libraspberrypi-bin libraspberrypi-dev libraspberrypi0
-    
-    # Check if libraries are now available
-    for lib_path in "/opt/vc/lib/libmmal.so" "/usr/lib/libmmal.so" "/usr/lib/arm-linux-gnueabihf/libmmal.so"; do
-        if [ -f "$lib_path" ]; then
-            echo "✅ Found MMAL library at: $lib_path"
-            MMAL_FOUND=true
-            break
-        fi
-    done
+# Check camera access using OpenCV
+echo "🔍 Checking camera access..."
+source venv/bin/activate
+if python -c "import cv2; cap = cv2.VideoCapture(0); print('Camera available:', cap.isOpened()); cap.release()" 2>/dev/null; then
+    echo "✅ Camera access confirmed via OpenCV"
+else
+    echo "⚠️  Camera access test failed - check camera connection and permissions"
 fi
-
-# Create symlinks if needed for better compatibility
-if [ -f "/opt/vc/lib/libmmal.so" ] && [ ! -f "/usr/lib/libmmal.so" ]; then
-    echo "🔗 Creating symlink for MMAL library..."
-    sudo ln -sf /opt/vc/lib/libmmal.so /usr/lib/libmmal.so
-fi
-
-if [ -f "/opt/vc/lib/libbcm_host.so" ] && [ ! -f "/usr/lib/libbcm_host.so" ]; then
-    echo "🔗 Creating symlink for BCM_HOST library..."
-    sudo ln -sf /opt/vc/lib/libbcm_host.so /usr/lib/libbcm_host.so
-fi
-
-# Update library cache
-echo "🔄 Updating library cache..."
-sudo ldconfig
 
 # Test each package individually with better error handling
 echo "Testing individual packages..."
@@ -236,15 +199,6 @@ if python -c "import flask; print('✅ Flask installed')" 2>/dev/null; then
 else
     echo "❌ Flask failed"
     FLASK_OK=false
-fi
-
-# Picamera needs special handling - it may not work in all environments
-if python -c "import picamera; print('✅ Picamera installed')" 2>/dev/null; then
-    PICAMERA_OK=true
-else
-    echo "⚠️  Picamera import failed (this is normal on non-Raspberry Pi systems)"
-    echo "   The picamera module will work when the camera is connected"
-    PICAMERA_OK=true  # Don't fail the test for picamera
 fi
 
 # Overall test result

@@ -1,13 +1,12 @@
 """
-Simple camera interface for Raspberry Pi Camera Module.
+Simple camera interface using OpenCV for Raspberry Pi Camera Module.
 """
 
 import io
 import time
 import logging
 import threading
-import picamera
-from picamera.array import PiRGBArray
+import cv2
 import numpy as np
 try:
     from . import config
@@ -17,7 +16,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 class Camera:
-    """Simple camera interface for Raspberry Pi Camera Module."""
+    """Simple camera interface using OpenCV for Raspberry Pi Camera Module."""
     
     def __init__(self):
         """Initialize the camera with settings from config."""
@@ -58,7 +57,7 @@ class Camera:
         # Close camera
         if self.camera:
             try:
-                self.camera.close()
+                self.camera.release()
             except Exception as e:
                 logger.error(f"Error closing camera: {e}")
             finally:
@@ -69,42 +68,47 @@ class Camera:
     def _capture_loop(self):
         """Main capture loop that runs in a separate thread."""
         try:
-            # Initialize the camera
-            self.camera = picamera.PiCamera()
-            self.camera.resolution = self.resolution
-            self.camera.framerate = self.framerate
-            self.camera.rotation = self.rotation
+            # Initialize the camera using OpenCV
+            self.camera = cv2.VideoCapture(0)
+            
+            # Set camera properties
+            self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.resolution[0])
+            self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.resolution[1])
+            self.camera.set(cv2.CAP_PROP_FPS, self.framerate)
+            
+            # Check if camera opened successfully
+            if not self.camera.isOpened():
+                raise RuntimeError("Failed to open camera")
+            
+            logger.info("Camera opened successfully")
             
             # Allow camera to warm up
             time.sleep(2)
             
-            # Create a stream for capturing frames
-            raw_capture = PiRGBArray(self.camera, size=self.resolution)
-            
             # Capture frames continuously
-            for frame in self.camera.capture_continuous(raw_capture, format="bgr", 
-                                                      use_video_port=True):
-                if not self.running:
-                    break
+            while self.running:
+                ret, frame = self.camera.read()
+                if not ret:
+                    logger.warning("Failed to read frame from camera")
+                    time.sleep(0.1)
+                    continue
                 
-                # Get the numpy array
-                image = frame.array
+                # Apply rotation if needed
+                if self.rotation == 90:
+                    frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+                elif self.rotation == 180:
+                    frame = cv2.rotate(frame, cv2.ROTATE_180)
+                elif self.rotation == 270:
+                    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
                 
                 # Update the frame
                 with self.lock:
-                    self.frame = image.copy()
+                    self.frame = frame.copy()
                     self.last_frame_time = time.time()
                 
-                # Clear the stream for the next frame
-                raw_capture.truncate(0)
+                # Sleep to maintain framerate
+                time.sleep(1.0 / self.framerate)
                 
-        except OSError as e:
-            if "libmmal.so" in str(e) or "libbcm_host.so" in str(e):
-                logger.error(f"Raspberry Pi firmware libraries missing: {e}")
-                logger.error("Please install: sudo apt-get install libraspberrypi-bin libraspberrypi-dev libraspberrypi0")
-            else:
-                logger.error(f"Camera hardware error: {e}")
-            self.running = False
         except Exception as e:
             logger.error(f"Error in camera capture loop: {e}")
             self.running = False
@@ -123,6 +127,5 @@ class Camera:
             return None
         
         # Convert to JPEG
-        import cv2
         ret, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, quality])
         return jpeg.tobytes()
