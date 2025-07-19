@@ -65,7 +65,7 @@ fi
 # Install required packages (only if fresh install or forced)
 if [ "$FRESH_INSTALL" = true ] || [ "$1" = "--force-update" ]; then
     echo "📦 Installing required packages..."
-    sudo apt-get install -y python3-pip python3-opencv python3-flask python3-venv python3-full libraspberrypi-bin libraspberrypi-dev libraspberrypi0
+    sudo apt-get install -y python3-pip python3-opencv python3-flask python3-venv python3-full libraspberrypi-bin libraspberrypi-dev libraspberrypi0 libmmal-dev
 else
     echo "📦 Skipping package installation (already installed)"
 fi
@@ -140,7 +140,7 @@ Description=Simple Cat Detection Service
 After=network.target
 
 [Service]
-ExecStart=$(pwd)/venv/bin/python -m app
+ExecStart=$(pwd)/venv/bin/python $(pwd)/start_detection.py
 WorkingDirectory=$(pwd)
 StandardOutput=inherit
 StandardError=inherit
@@ -175,6 +175,21 @@ chmod +x install.sh
 # Test the installation
 echo "🧪 Testing installation..."
 source venv/bin/activate
+
+# Check for MMAL libraries
+echo "🔍 Checking MMAL libraries..."
+if [ ! -f "/opt/vc/lib/libmmal.so" ] && [ ! -f "/usr/lib/libmmal.so" ]; then
+    echo "⚠️  MMAL libraries not found, installing additional packages..."
+    sudo apt-get install -y libraspberrypi0
+    # Create symlink if needed
+    if [ -f "/opt/vc/lib/libmmal.so" ] && [ ! -f "/usr/lib/libmmal.so" ]; then
+        sudo ln -sf /opt/vc/lib/libmmal.so /usr/lib/libmmal.so
+    fi
+fi
+
+# Update library cache
+echo "🔄 Updating library cache..."
+sudo ldconfig
 
 # Test each package individually with better error handling
 echo "Testing individual packages..."
