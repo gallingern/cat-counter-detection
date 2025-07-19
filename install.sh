@@ -2,6 +2,13 @@
 
 # Simple Cat Detection System Installation Script
 # For Raspberry Pi 2 W with Camera Module v1
+#
+# This script is for full installation and setup.
+# For quick updates after git pull, use update.sh instead.
+#
+# Differences:
+# - install.sh: Full system setup, package installation, service creation
+# - update.sh: Git pull, dependency updates, service restart, web testing
 
 echo "=== Simple Cat Detection System Installation ==="
 echo "This script will install the necessary dependencies and set up the system."

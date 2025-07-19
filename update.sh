@@ -1,6 +1,13 @@
 #!/bin/bash
 
 # Simple Cat Detection System Update Script
+# 
+# This script is for quick updates after git pull.
+# For full installation, use install.sh instead.
+# 
+# Differences:
+# - install.sh: Full system setup, package installation, service creation
+# - update.sh: Git pull, dependency updates, service restart, web testing
 
 echo "=== Simple Cat Detection System Update ==="
 echo "This script will update the system and restart the service."
@@ -20,7 +27,13 @@ else
         echo "🔧 Checking if dependencies need updating..."
         if [ -d "venv" ]; then
             source venv/bin/activate
-            pip install -r requirements.txt 2>/dev/null || echo "No requirements.txt found, skipping pip install"
+            # Quick check if packages are installed
+            if ! python -c "import cv2, flask, picamera, numpy" 2>/dev/null; then
+                echo "⚠️  Some dependencies missing, installing..."
+                pip install picamera opencv-python flask numpy
+            else
+                echo "✅ All Python dependencies already installed"
+            fi
         fi
     else
         echo "❌ Git pull failed"
@@ -30,7 +43,14 @@ fi
 
 # Restart the service
 echo "🔄 Restarting service..."
-sudo systemctl restart cat-detection
+sudo systemctl daemon-reload
+if systemctl is-active --quiet cat-detection; then
+    echo "Restarting existing service..."
+    sudo systemctl restart cat-detection
+else
+    echo "Starting service..."
+    sudo systemctl start cat-detection
+fi
 
 # Check service status
 echo "🔍 Checking service status..."
