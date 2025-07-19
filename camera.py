@@ -69,6 +69,7 @@ class Camera:
         """Main capture loop that runs in a separate thread."""
         try:
             # Initialize the camera using OpenCV with libcamera backend
+            # Try libcamera backend first (for Raspberry Pi OS 64-bit)
             self.camera = cv2.VideoCapture(0, cv2.CAP_V4L2)
             
             # Set camera properties
@@ -76,12 +77,19 @@ class Camera:
             self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.resolution[1])
             self.camera.set(cv2.CAP_PROP_FPS, self.framerate)
             
+            # Note: Camera format will be auto-detected
+            
             # Check if camera opened successfully
             if not self.camera.isOpened():
-                # Try alternative approach with different backend
-                self.camera = cv2.VideoCapture(0, cv2.CAP_ANY)
+                # Try with libcamera backend explicitly
+                logger.info("Trying libcamera backend...")
+                self.camera = cv2.VideoCapture(0, cv2.CAP_GSTREAMER)
                 if not self.camera.isOpened():
-                    raise RuntimeError("Failed to open camera")
+                    # Try default backend
+                    logger.info("Trying default backend...")
+                    self.camera = cv2.VideoCapture(0, cv2.CAP_ANY)
+                    if not self.camera.isOpened():
+                        raise RuntimeError("Failed to open camera with any backend")
             
             logger.info("Camera opened successfully")
             
