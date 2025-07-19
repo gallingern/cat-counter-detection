@@ -65,7 +65,7 @@ fi
 # Install required packages (only if fresh install or forced)
 if [ "$FRESH_INSTALL" = true ] || [ "$1" = "--force-update" ]; then
     echo "📦 Installing required packages..."
-    sudo apt-get install -y python3-pip python3-opencv python3-flask python3-venv python3-full libraspberrypi-bin libraspberrypi-dev libraspberrypi0 libmmal-dev
+    sudo apt-get install -y python3-pip python3-opencv python3-flask python3-venv python3-full libraspberrypi-bin libraspberrypi-dev libraspberrypi0
 else
     echo "📦 Skipping package installation (already installed)"
 fi
@@ -176,15 +176,44 @@ chmod +x install.sh
 echo "🧪 Testing installation..."
 source venv/bin/activate
 
-# Check for MMAL libraries
+# Check for MMAL libraries and fix library paths
 echo "🔍 Checking MMAL libraries..."
-if [ ! -f "/opt/vc/lib/libmmal.so" ] && [ ! -f "/usr/lib/libmmal.so" ]; then
-    echo "⚠️  MMAL libraries not found, installing additional packages..."
-    sudo apt-get install -y libraspberrypi0
-    # Create symlink if needed
-    if [ -f "/opt/vc/lib/libmmal.so" ] && [ ! -f "/usr/lib/libmmal.so" ]; then
-        sudo ln -sf /opt/vc/lib/libmmal.so /usr/lib/libmmal.so
+MMAL_FOUND=false
+
+# Check common locations
+for lib_path in "/opt/vc/lib/libmmal.so" "/usr/lib/libmmal.so" "/usr/lib/arm-linux-gnueabihf/libmmal.so"; do
+    if [ -f "$lib_path" ]; then
+        echo "✅ Found MMAL library at: $lib_path"
+        MMAL_FOUND=true
+        break
     fi
+done
+
+if [ "$MMAL_FOUND" = false ]; then
+    echo "⚠️  MMAL libraries not found, attempting to fix..."
+    
+    # Try to install/reinstall Raspberry Pi firmware packages
+    sudo apt-get install -y --reinstall libraspberrypi-bin libraspberrypi-dev libraspberrypi0
+    
+    # Check if libraries are now available
+    for lib_path in "/opt/vc/lib/libmmal.so" "/usr/lib/libmmal.so" "/usr/lib/arm-linux-gnueabihf/libmmal.so"; do
+        if [ -f "$lib_path" ]; then
+            echo "✅ Found MMAL library at: $lib_path"
+            MMAL_FOUND=true
+            break
+        fi
+    done
+fi
+
+# Create symlinks if needed for better compatibility
+if [ -f "/opt/vc/lib/libmmal.so" ] && [ ! -f "/usr/lib/libmmal.so" ]; then
+    echo "🔗 Creating symlink for MMAL library..."
+    sudo ln -sf /opt/vc/lib/libmmal.so /usr/lib/libmmal.so
+fi
+
+if [ -f "/opt/vc/lib/libbcm_host.so" ] && [ ! -f "/usr/lib/libbcm_host.so" ]; then
+    echo "🔗 Creating symlink for BCM_HOST library..."
+    sudo ln -sf /opt/vc/lib/libbcm_host.so /usr/lib/libbcm_host.so
 fi
 
 # Update library cache
