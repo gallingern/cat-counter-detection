@@ -65,7 +65,7 @@ fi
 # Install required packages (only if fresh install or forced)
 if [ "$FRESH_INSTALL" = true ] || [ "$1" = "--force-update" ]; then
     echo "📦 Installing required packages..."
-    sudo apt-get install -y python3-pip python3-opencv python3-flask python3-venv python3-full libraspberrypi-bin libraspberrypi-dev libraspberrypi0
+    sudo apt-get install -y python3-pip python3-opencv python3-flask python3-venv python3-full libraspberrypi-bin libraspberrypi-dev libraspberrypi0 opencv-data
 else
     echo "📦 Skipping package installation (already installed)"
 fi
@@ -176,6 +176,11 @@ chmod +x install.sh
 echo "🧪 Testing installation..."
 source venv/bin/activate
 
+# Fix camera permissions
+echo "🔧 Fixing camera permissions..."
+sudo usermod -a -G video $USER
+sudo chmod 666 /dev/video* 2>/dev/null || echo "Camera devices not found yet"
+
 # Check camera access using OpenCV
 echo "🔍 Checking camera access..."
 source venv/bin/activate
@@ -183,6 +188,22 @@ if python -c "import cv2; cap = cv2.VideoCapture(0); print('Camera available:', 
     echo "✅ Camera access confirmed via OpenCV"
 else
     echo "⚠️  Camera access test failed - check camera connection and permissions"
+fi
+
+# Check cascade file
+echo "🔍 Checking cascade file..."
+CASCADE_FOUND=false
+for cascade_path in "/usr/local/share/opencv4/haarcascades/haarcascade_frontalcatface.xml" "/usr/share/opencv4/haarcascades/haarcascade_frontalcatface.xml" "/usr/local/share/opencv/haarcascades/haarcascade_frontalcatface.xml" "/usr/share/opencv/haarcascades/haarcascade_frontalcatface.xml"; do
+    if [ -f "$cascade_path" ]; then
+        echo "✅ Found cascade file at: $cascade_path"
+        CASCADE_FOUND=true
+        break
+    fi
+done
+
+if [ "$CASCADE_FOUND" = false ]; then
+    echo "⚠️  Cascade file not found - installing opencv-data..."
+    sudo apt-get install -y opencv-data
 fi
 
 # Test each package individually with better error handling
