@@ -132,8 +132,10 @@ else
     echo "Camera module already enabled."
 fi
 
-# Create systemd service
-echo "🔧 Creating systemd service..."
+# Create/update systemd service
+echo "🔧 Creating/updating systemd service..."
+# Always update the service file to ensure it has the latest configuration
+# This ensures service updates are applied even during updates
 sudo tee /etc/systemd/system/cat-detection.service > /dev/null << EOL
 [Unit]
 Description=Simple Cat Detection Service
