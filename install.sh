@@ -120,10 +120,41 @@ fi
 
 # Enable camera (only if not already enabled)
 echo "📷 Checking camera module..."
-if ! grep -q "^start_x=1" /boot/config.txt; then
+
+# Determine config file location (new Raspberry Pi OS uses /boot/firmware/config.txt)
+CONFIG_FILE="/boot/firmware/config.txt"
+if [ ! -f "$CONFIG_FILE" ]; then
+    CONFIG_FILE="/boot/config.txt"
+fi
+
+echo "Using config file: $CONFIG_FILE"
+
+# Check if camera settings are already enabled
+CAMERA_ENABLED=false
+if grep -q "^start_x=1" "$CONFIG_FILE" && grep -q "^gpu_mem=128" "$CONFIG_FILE"; then
+    CAMERA_ENABLED=true
+fi
+
+if [ "$CAMERA_ENABLED" = false ]; then
     echo "Enabling camera module..."
-    sudo bash -c 'echo "start_x=1" >> /boot/config.txt'
-    sudo bash -c 'echo "gpu_mem=128" >> /boot/config.txt'
+    
+    # Add essential camera settings
+    if ! grep -q "^start_x=1" "$CONFIG_FILE"; then
+        sudo bash -c "echo 'start_x=1' >> $CONFIG_FILE"
+        echo "Added start_x=1"
+    fi
+    
+    if ! grep -q "^gpu_mem=128" "$CONFIG_FILE"; then
+        sudo bash -c "echo 'gpu_mem=128' >> $CONFIG_FILE"
+        echo "Added gpu_mem=128"
+    fi
+    
+    # Add camera auto-detect if not present
+    if ! grep -q "^camera_auto_detect=1" "$CONFIG_FILE"; then
+        sudo bash -c "echo 'camera_auto_detect=1' >> $CONFIG_FILE"
+        echo "Added camera_auto_detect=1"
+    fi
+    
     echo "Camera module enabled. A reboot will be required."
     REBOOT_REQUIRED=true
 else
