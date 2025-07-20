@@ -151,6 +151,24 @@ if [ "$CAMERA_ENABLED" = false ]; then
         echo "Added camera_auto_detect=1"
     fi
     
+    # Add specific overlay for Camera Module v2 (imx219) on Pi Zero 2
+    if ! grep -q "^dtoverlay=imx219" "$CONFIG_FILE"; then
+        sudo bash -c "echo 'dtoverlay=imx219' >> $CONFIG_FILE"
+        echo "Added dtoverlay=imx219 for Camera Module v2"
+    fi
+    
+    # Add legacy camera support for v1 module (ov5647) as fallback
+    if ! grep -q "^dtoverlay=ov5647" "$CONFIG_FILE"; then
+        sudo bash -c "echo 'dtoverlay=ov5647' >> $CONFIG_FILE"
+        echo "Added dtoverlay=ov5647 for legacy v1 support"
+    fi
+    
+    # Add Pi Zero 2 specific camera settings
+    if ! grep -q "^camera_interface=1" "$CONFIG_FILE"; then
+        sudo bash -c "echo 'camera_interface=1' >> $CONFIG_FILE"
+        echo "Added camera_interface=1 for Pi Zero 2"
+    fi
+    
     echo "Camera module enabled. A reboot will be required."
     REBOOT_REQUIRED=true
 else
