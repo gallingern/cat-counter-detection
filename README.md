@@ -1,6 +1,6 @@
 # Simple Cat Detection System
 
-A lightweight cat detection system for Raspberry Pi 2 W with Camera Module v1.
+A lightweight cat detection system for Raspberry Pi Zero 2 W with Camera Module v2.
 
 ## Overview
 
@@ -11,9 +11,9 @@ This project provides a simple cat detection system that:
 
 ## Requirements
 
-- Raspberry Pi 2 W (or compatible model)
-- Raspberry Pi Camera Module v1 (or compatible camera)
-- Raspberry Pi OS (Bullseye or newer recommended)
+- Raspberry Pi Zero 2 W (or compatible model)
+- Raspberry Pi Camera Module v2 (with imx219 sensor)
+- Raspberry Pi OS 64-bit (Bookworm or newer recommended)
 
 ## Installation
 

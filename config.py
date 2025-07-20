@@ -1,15 +1,16 @@
 """
 Simple configuration for cat detection system.
+Optimized for Raspberry Pi Zero 2 W with Camera Module v2.
 """
 
-# Camera settings
-CAMERA_RESOLUTION = (640, 480)  # Width, Height
-CAMERA_FRAMERATE = 10  # FPS
+# Camera settings (optimized for Camera Module v2)
+CAMERA_RESOLUTION = (1280, 720)  # Width, Height - v2 supports higher resolution
+CAMERA_FRAMERATE = 15  # FPS - v2 can handle higher framerate
 CAMERA_ROTATION = 0  # Degrees (0, 90, 180, or 270)
 
-# Detection settings
-CONFIDENCE_THRESHOLD = 0.5  # Minimum confidence for detection
-DETECTION_INTERVAL = 0.1  # Seconds between detection attempts
+# Detection settings (optimized for Camera Module v2)
+CONFIDENCE_THRESHOLD = 0.4  # Lower threshold for v2's better image quality
+DETECTION_INTERVAL = 0.05  # Faster detection for v2's higher framerate
 
 # Web server settings
 WEB_PORT = 5000

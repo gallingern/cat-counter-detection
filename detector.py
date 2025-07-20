@@ -1,5 +1,6 @@
 """
 Simple cat detector using OpenCV Haar cascades.
+Optimized for Raspberry Pi Zero 2 W with Camera Module v2.
 """
 
 import cv2
@@ -14,7 +15,8 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 class CatDetector:
-    """Simple cat detector using OpenCV Haar cascades."""
+    """Simple cat detector using OpenCV Haar cascades.
+    Optimized for Camera Module v2 with improved detection parameters."""
     
     def __init__(self):
         """Initialize the cat detector."""
@@ -88,12 +90,12 @@ class CatDetector:
         # Convert to grayscale for detection
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         
-        # Detect cats
+        # Detect cats (optimized for Camera Module v2)
         cats = self.cascade.detectMultiScale(
             gray,
-            scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(30, 30)
+            scaleFactor=1.05,  # More sensitive for v2's better image quality
+            minNeighbors=3,    # Lower threshold for better detection
+            minSize=(40, 40)   # Larger minimum size for v2's higher resolution
         )
         
         # Draw rectangles around detected cats

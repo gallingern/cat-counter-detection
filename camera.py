@@ -1,5 +1,6 @@
 """
-Simple camera interface using OpenCV for Raspberry Pi Camera Module.
+Simple camera interface using OpenCV for Raspberry Pi Camera Module v2.
+Optimized for Pi Zero 2 W with imx219 sensor.
 """
 
 import io
@@ -16,7 +17,8 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 class Camera:
-    """Simple camera interface using OpenCV for Raspberry Pi Camera Module."""
+    """Simple camera interface using OpenCV for Raspberry Pi Camera Module v2.
+    Optimized for Pi Zero 2 W with imx219 sensor and improved image quality."""
     
     def __init__(self):
         """Initialize the camera with settings from config."""

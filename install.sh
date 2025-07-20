@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Simple Cat Detection System Installation Script
-# For Raspberry Pi 2 W with Camera Module v1
+# For Raspberry Pi Zero 2 W with Camera Module v2
 #
 # This script is for full installation and setup.
 # For quick updates after git pull, use update.sh instead.
@@ -36,7 +36,7 @@ fi
 # Check if running on Raspberry Pi
 if ! grep -q "Raspberry Pi" /proc/device-tree/model 2>/dev/null; then
     echo "⚠️  Warning: This doesn't appear to be a Raspberry Pi."
-    echo "    This system is designed for Raspberry Pi 2 W with Camera Module v1."
+    echo "    This system is designed for Raspberry Pi Zero 2 W with Camera Module v2."
     read -p "Continue anyway? (y/n) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -155,12 +155,6 @@ if [ "$CAMERA_ENABLED" = false ]; then
     if ! grep -q "^dtoverlay=imx219" "$CONFIG_FILE"; then
         sudo bash -c "echo 'dtoverlay=imx219' >> $CONFIG_FILE"
         echo "Added dtoverlay=imx219 for Camera Module v2"
-    fi
-    
-    # Add legacy camera support for v1 module (ov5647) as fallback
-    if ! grep -q "^dtoverlay=ov5647" "$CONFIG_FILE"; then
-        sudo bash -c "echo 'dtoverlay=ov5647' >> $CONFIG_FILE"
-        echo "Added dtoverlay=ov5647 for legacy v1 support"
     fi
     
     # Add Pi Zero 2 specific camera settings
