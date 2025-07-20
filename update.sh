@@ -44,7 +44,9 @@ if [ -d "venv" ]; then
     # Check if packages are installed
     if ! python -c "import cv2, flask, numpy" 2>/dev/null; then
         echo "⚠️  Some dependencies missing, installing..."
-        pip install opencv-python flask numpy
+        # Use system OpenCV packages installed via apt
+        # Avoid installing opencv-python from pip to reduce overhead
+        pip install --upgrade flask numpy
     else
         echo "✅ All Python dependencies already installed"
     fi

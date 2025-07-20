@@ -92,12 +92,12 @@ fi
 # Only install dependencies if fresh install or forced
 if [ "$FRESH_INSTALL" = true ] || [ "$1" = "--force-reinstall" ]; then
     echo "Installing flask and numpy..."
-    pip install flask numpy
+    pip install --upgrade flask numpy
 else
     echo "Checking Python dependencies..."
     if ! python -c "import cv2, flask, numpy" 2>/dev/null; then
         echo "⚠️  Some dependencies missing, installing..."
-        pip install flask numpy
+        pip install --upgrade flask numpy
     else
         echo "✅ All Python dependencies already installed"
     fi
