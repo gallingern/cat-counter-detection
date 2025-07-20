@@ -125,48 +125,51 @@ echo "📷 Checking camera module..."
 CONFIG_FILE="/boot/firmware/config.txt"
 echo "Using config file: $CONFIG_FILE"
 
-# Check if camera settings are already enabled
-CAMERA_ENABLED=false
-if grep -q "^start_x=1" "$CONFIG_FILE" && grep -q "^gpu_mem=128" "$CONFIG_FILE"; then
-    CAMERA_ENABLED=true
+# Check and add camera settings (always check each setting individually)
+echo "Checking camera module configuration..."
+
+# Track if any changes were made
+CAMERA_CHANGES=false
+
+# Add essential camera settings
+if ! grep -q "^start_x=1" "$CONFIG_FILE"; then
+    sudo bash -c "echo 'start_x=1' >> $CONFIG_FILE"
+    echo "Added start_x=1"
+    CAMERA_CHANGES=true
 fi
 
-if [ "$CAMERA_ENABLED" = false ]; then
-    echo "Enabling camera module..."
-    
-    # Add essential camera settings
-    if ! grep -q "^start_x=1" "$CONFIG_FILE"; then
-        sudo bash -c "echo 'start_x=1' >> $CONFIG_FILE"
-        echo "Added start_x=1"
-    fi
-    
-    if ! grep -q "^gpu_mem=128" "$CONFIG_FILE"; then
-        sudo bash -c "echo 'gpu_mem=128' >> $CONFIG_FILE"
-        echo "Added gpu_mem=128"
-    fi
-    
-    # Add camera auto-detect if not present
-    if ! grep -q "^camera_auto_detect=1" "$CONFIG_FILE"; then
-        sudo bash -c "echo 'camera_auto_detect=1' >> $CONFIG_FILE"
-        echo "Added camera_auto_detect=1"
-    fi
-    
-    # Add specific overlay for Camera Module v2 (imx219) on Pi Zero 2
-    if ! grep -q "^dtoverlay=imx219" "$CONFIG_FILE"; then
-        sudo bash -c "echo 'dtoverlay=imx219' >> $CONFIG_FILE"
-        echo "Added dtoverlay=imx219 for Camera Module v2"
-    fi
-    
-    # Add Pi Zero 2 specific camera settings
-    if ! grep -q "^camera_interface=1" "$CONFIG_FILE"; then
-        sudo bash -c "echo 'camera_interface=1' >> $CONFIG_FILE"
-        echo "Added camera_interface=1 for Pi Zero 2"
-    fi
-    
-    echo "Camera module enabled. A reboot will be required."
+if ! grep -q "^gpu_mem=128" "$CONFIG_FILE"; then
+    sudo bash -c "echo 'gpu_mem=128' >> $CONFIG_FILE"
+    echo "Added gpu_mem=128"
+    CAMERA_CHANGES=true
+fi
+
+# Add camera auto-detect if not present
+if ! grep -q "^camera_auto_detect=1" "$CONFIG_FILE"; then
+    sudo bash -c "echo 'camera_auto_detect=1' >> $CONFIG_FILE"
+    echo "Added camera_auto_detect=1"
+    CAMERA_CHANGES=true
+fi
+
+# Add specific overlay for Camera Module v2 (imx219) on Pi Zero 2
+if ! grep -q "^dtoverlay=imx219" "$CONFIG_FILE"; then
+    sudo bash -c "echo 'dtoverlay=imx219' >> $CONFIG_FILE"
+    echo "Added dtoverlay=imx219 for Camera Module v2"
+    CAMERA_CHANGES=true
+fi
+
+# Add Pi Zero 2 specific camera settings
+if ! grep -q "^camera_interface=1" "$CONFIG_FILE"; then
+    sudo bash -c "echo 'camera_interface=1' >> $CONFIG_FILE"
+    echo "Added camera_interface=1 for Pi Zero 2"
+    CAMERA_CHANGES=true
+fi
+
+if [ "$CAMERA_CHANGES" = true ]; then
+    echo "Camera module configuration updated. A reboot will be required."
     REBOOT_REQUIRED=true
 else
-    echo "Camera module already enabled."
+    echo "Camera module already properly configured."
 fi
 
 # Create/update systemd service
