@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Cat Detection System is a lightweight, real-time cat detection application designed for Raspberry Pi 2 W with Camera Module v1. It provides a web-based interface for monitoring and detecting cats in a live video stream.
+The Cat Detection System is a lightweight, real-time cat detection application designed for Raspberry Pi Zero 2 W with Camera Module v2. It provides a web-based interface for monitoring and detecting cats in a live video stream.
 
 ## Architecture
 
@@ -40,7 +40,7 @@ The Cat Detection System is a lightweight, real-time cat detection application d
 - Automatic camera initialization and cleanup
 
 **Design Decisions:**
-- Uses `picamera` library for optimal Raspberry Pi performance
+- Uses OpenCV for optimal Raspberry Pi performance and Camera Module v2 support
 - Threaded capture loop prevents blocking the main application
 - Thread-safe frame access with locks
 - Configurable parameters via config.py
@@ -126,13 +126,13 @@ System Metrics → app.py → JSON API → JavaScript → UI Updates
 ## Configuration Management
 
 ### Camera Settings
-- **Resolution:** 640x480 (configurable)
-- **Framerate:** 10 FPS (configurable)
+- **Resolution:** 1280x720 (configurable, optimized for Camera Module v2)
+- **Framerate:** 15 FPS (configurable, optimized for Camera Module v2)
 - **Rotation:** 0° (configurable)
 
 ### Detection Settings
-- **Confidence Threshold:** 0.5 (configurable)
-- **Detection Interval:** 0.1 seconds (configurable)
+- **Confidence Threshold:** 0.4 (configurable, optimized for Camera Module v2)
+- **Detection Interval:** 0.05 seconds (configurable, optimized for Camera Module v2)
 - **Cascade Path:** Auto-detected with fallbacks
 
 ### Web Server Settings
@@ -241,8 +241,8 @@ System Metrics → app.py → JSON API → JavaScript → UI Updates
 ## Dependencies
 
 ### Hardware Dependencies
-- Raspberry Pi 2 W (or compatible)
-- Raspberry Pi Camera Module v1
+- Raspberry Pi Zero 2 W (or compatible)
+- Raspberry Pi Camera Module v2 (with imx219 sensor)
 - Adequate power supply
 - Network connectivity
 
@@ -250,7 +250,6 @@ System Metrics → app.py → JSON API → JavaScript → UI Updates
 - Python 3.7+
 - OpenCV 4.x
 - Flask 2.x
-- picamera library
 - numpy
 - systemd (for service management)
 
