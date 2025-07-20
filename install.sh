@@ -3,12 +3,7 @@
 # Simple Cat Detection System Installation Script
 # For Raspberry Pi Zero 2 W with Camera Module v2
 #
-# This script is for full installation and setup.
-# For quick updates after git pull, use update.sh instead.
-#
-# Differences:
-# - install.sh: Full system setup, package installation, service creation
-# - update.sh: Git pull, dependency updates, service restart, web testing
+# This script performs a complete fresh installation and setup.
 
 echo "=== Simple Cat Detection System Installation ==="
 echo "This script will install the necessary dependencies and set up the system."
@@ -30,8 +25,6 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo ""
     exit 0
 fi
-
-
 
 # Check if running on Raspberry Pi
 if ! grep -q "Raspberry Pi" /proc/device-tree/model 2>/dev/null; then
@@ -118,15 +111,12 @@ else
     fi
 fi
 
-# Enable camera (only if not already enabled)
-echo "📷 Checking camera module..."
+# Configure camera module
+echo "📷 Configuring camera module..."
 
 # Use the standard config file location for Raspberry Pi OS 64-bit
 CONFIG_FILE="/boot/firmware/config.txt"
 echo "Using config file: $CONFIG_FILE"
-
-# Check and add camera settings (always check each setting individually)
-echo "Checking camera module configuration..."
 
 # Track if any changes were made
 CAMERA_CHANGES=false
@@ -174,8 +164,6 @@ fi
 
 # Create/update systemd service
 echo "🔧 Creating/updating systemd service..."
-# Always update the service file to ensure it has the latest configuration
-# This ensures service updates are applied even during updates
 sudo tee /etc/systemd/system/cat-detection.service > /dev/null << EOL
 [Unit]
 Description=Simple Cat Detection Service
@@ -208,48 +196,22 @@ else
     sudo systemctl start cat-detection
 fi
 
-# Make scripts executable (this only changes file permissions, not content)
+# Make scripts executable
 echo "🔧 Making scripts executable..."
 chmod +x start_detection.py
 chmod +x update.sh
 chmod +x install.sh
-
-# Test the installation
-echo "🧪 Testing installation..."
-source venv/bin/activate
 
 # Fix camera permissions
 echo "🔧 Fixing camera permissions..."
 sudo usermod -a -G video $USER
 sudo chmod 666 /dev/video* 2>/dev/null || echo "Camera devices not found yet"
 
-# Check camera access using OpenCV
-echo "🔍 Checking camera access..."
-source venv/bin/activate
-if python -c "import cv2; cap = cv2.VideoCapture(0); print('Camera available:', cap.isOpened()); cap.release()" 2>/dev/null; then
-    echo "✅ Camera access confirmed via OpenCV"
-else
-    echo "⚠️  Camera access test failed - check camera connection and permissions"
-fi
+# Test the installation
+echo "🧪 Testing installation..."
 
-# Check cascade file
-echo "🔍 Checking cascade file..."
-CASCADE_FOUND=false
-for cascade_path in "/usr/local/share/opencv4/haarcascades/haarcascade_frontalcatface.xml" "/usr/share/opencv4/haarcascades/haarcascade_frontalcatface.xml" "/usr/local/share/opencv/haarcascades/haarcascade_frontalcatface.xml" "/usr/share/opencv/haarcascades/haarcascade_frontalcatface.xml"; do
-    if [ -f "$cascade_path" ]; then
-        echo "✅ Found cascade file at: $cascade_path"
-        CASCADE_FOUND=true
-        break
-    fi
-done
-
-if [ "$CASCADE_FOUND" = false ]; then
-    echo "⚠️  Cascade file not found - installing opencv-data..."
-    sudo apt-get install -y opencv-data
-fi
-
-# Test each package individually with better error handling
-echo "Testing individual packages..."
+# Test Python packages
+echo "Testing Python packages..."
 if python -c "import cv2; print('✅ OpenCV installed')" 2>/dev/null; then
     OPENCV_OK=true
 else
@@ -264,10 +226,42 @@ else
     FLASK_OK=false
 fi
 
+# Test camera access
+echo "Testing camera access..."
+CAMERA_OK=false
+if python -c "import cv2; cap = cv2.VideoCapture(0); print('Camera available:', cap.isOpened()); cap.release()" 2>/dev/null; then
+    echo "✅ Camera access confirmed via OpenCV"
+    CAMERA_OK=true
+else
+    echo "⚠️  Camera access test failed - check camera connection and permissions"
+    echo "   This is normal if camera settings were just updated and reboot is needed"
+fi
+
+# Check cascade file
+echo "Checking cascade file..."
+CASCADE_FOUND=false
+for cascade_path in "/usr/local/share/opencv4/haarcascades/haarcascade_frontalcatface.xml" "/usr/share/opencv4/haarcascades/haarcascade_frontalcatface.xml" "/usr/local/share/opencv/haarcascades/haarcascade_frontalcatface.xml" "/usr/share/opencv/haarcascades/haarcascade_frontalcatface.xml"; do
+    if [ -f "$cascade_path" ]; then
+        echo "✅ Found cascade file at: $cascade_path"
+        CASCADE_FOUND=true
+        break
+    fi
+done
+
+if [ "$CASCADE_FOUND" = false ]; then
+    echo "⚠️  Cascade file not found - installing opencv-data..."
+    sudo apt-get install -y opencv-data
+fi
+
 # Overall test result
 if [ "$OPENCV_OK" = true ] && [ "$FLASK_OK" = true ]; then
     echo "✅ Core dependencies installed successfully"
     echo "✅ Installation test passed"
+    
+    if [ "$CAMERA_OK" = false ] && [ "$REBOOT_REQUIRED" = true ]; then
+        echo "⚠️  Camera test failed but this is expected after config changes"
+        echo "   Camera will work after reboot"
+    fi
 else
     echo "❌ Some core dependencies failed to install"
     echo "Please check the installation manually"
