@@ -40,6 +40,7 @@ fi
 
 # Check if this is a fresh install or update
 FRESH_INSTALL=false
+REBOOT_REQUIRED=false
 if [ ! -d "venv" ] || [ ! -f "/etc/systemd/system/cat-detection.service" ]; then
     FRESH_INSTALL=true
     echo "🆕 Fresh installation detected"
@@ -75,37 +76,28 @@ if [ -d "venv" ]; then
 fi
 
 if [ ! -d "venv" ]; then
-    python3 -m venv venv
-    if [ $? -ne 0 ]; then
+    if ! python3 -m venv --system-site-packages venv; then
         echo "❌ Failed to create virtual environment"
         echo "Trying alternative method..."
         python3 -m pip install --user virtualenv
         python3 -m virtualenv venv
     fi
 fi
-
 # Activate virtual environment and install dependencies
 echo "🐍 Installing Python dependencies..."
-source venv/bin/activate
-if [ $? -ne 0 ]; then
+if ! source venv/bin/activate; then
     echo "❌ Failed to activate virtual environment"
     exit 1
 fi
-
 # Only install dependencies if fresh install or forced
 if [ "$FRESH_INSTALL" = true ] || [ "$1" = "--force-reinstall" ]; then
-    echo "Installing opencv-python..."
-    pip install opencv-python
-    echo "Installing flask..."
-    pip install flask
-    echo "Installing numpy..."
-    pip install numpy
+    echo "Installing flask and numpy..."
+    pip install flask numpy
 else
     echo "Checking Python dependencies..."
-    # Quick check if packages are installed
     if ! python -c "import cv2, flask, numpy" 2>/dev/null; then
         echo "⚠️  Some dependencies missing, installing..."
-        pip install opencv-python flask numpy
+        pip install flask numpy
     else
         echo "✅ All Python dependencies already installed"
     fi
@@ -114,11 +106,13 @@ fi
 # Configure camera module
 echo "📷 Configuring camera module..."
 
-# Use the standard config file location for Raspberry Pi OS 64-bit
-CONFIG_FILE="/boot/firmware/config.txt"
+# Determine which config file is used on this system
+if [ -f "/boot/firmware/config.txt" ]; then
+    CONFIG_FILE="/boot/firmware/config.txt"
+else
+    CONFIG_FILE="/boot/config.txt"
+fi
 echo "Using config file: $CONFIG_FILE"
-
-# Track if any changes were made
 CAMERA_CHANGES=false
 
 # Add essential camera settings
@@ -145,13 +139,6 @@ fi
 if ! grep -q "^dtoverlay=imx219" "$CONFIG_FILE"; then
     sudo bash -c "echo 'dtoverlay=imx219' >> $CONFIG_FILE"
     echo "Added dtoverlay=imx219 for Camera Module v2"
-    CAMERA_CHANGES=true
-fi
-
-# Add Pi Zero 2 specific camera settings
-if ! grep -q "^camera_interface=1" "$CONFIG_FILE"; then
-    sudo bash -c "echo 'camera_interface=1' >> $CONFIG_FILE"
-    echo "Added camera_interface=1 for Pi Zero 2"
     CAMERA_CHANGES=true
 fi
 
@@ -204,7 +191,7 @@ chmod +x install.sh
 
 # Fix camera permissions
 echo "🔧 Fixing camera permissions..."
-sudo usermod -a -G video $USER
+sudo usermod -a -G video "$USER"
 sudo chmod 666 /dev/video* 2>/dev/null || echo "Camera devices not found yet"
 
 # Test the installation
