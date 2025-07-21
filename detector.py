@@ -1,6 +1,6 @@
 """
 Simple cat detector using OpenCV Haar cascades.
-Optimized for Raspberry Pi Zero 2 W with Camera Module v2.
+Optimized for maximum efficiency on Raspberry Pi Zero 2 W.
 """
 
 import cv2
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class CatDetector:
     """Simple cat detector using OpenCV Haar cascades.
-    Optimized for Camera Module v2 with improved detection parameters."""
+    Optimized for maximum efficiency on Pi Zero 2 W."""
     
     def __init__(self):
         """Initialize the cat detector."""
@@ -63,18 +63,23 @@ class CatDetector:
             logger.error(f"Error loading cascade: {e}")
             raise
     
-    def detect(self, frame):
+    def detect(self, frame, motion_detected=False):
         """
-        Detect cats in the frame.
+        Detect cats in the frame (only when motion is detected).
         
         Args:
             frame: BGR image as numpy array
+            motion_detected: Whether motion was detected in this frame
             
         Returns:
             (detections, annotated_frame) where:
                 - detections is a list of (x, y, w, h) tuples
                 - annotated_frame is the input frame with detection boxes drawn
         """
+        # Skip detection if no motion detected (efficiency optimization)
+        if not motion_detected:
+            return [], frame
+        
         # Check if cascade is loaded
         if self.cascade is None or self.cascade.empty():
             logger.error("Cascade classifier not loaded")
@@ -87,15 +92,15 @@ class CatDetector:
         
         self.last_detection_time = current_time
         
-        # Convert to grayscale for detection
+        # Convert to grayscale for detection (optimized for lower resolution)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         
-        # Detect cats (optimized for Camera Module v2)
+        # Detect cats with optimized parameters for efficiency
         cats = self.cascade.detectMultiScale(
             gray,
-            scaleFactor=1.05,  # More sensitive for v2's better image quality
-            minNeighbors=3,    # Lower threshold for better detection
-            minSize=(40, 40)   # Larger minimum size for v2's higher resolution
+            scaleFactor=1.1,  # Less sensitive for efficiency
+            minNeighbors=4,   # Higher threshold for efficiency
+            minSize=(30, 30)  # Smaller minimum size for lower resolution
         )
         
         # Draw rectangles around detected cats
@@ -103,10 +108,12 @@ class CatDetector:
         for (x, y, w, h) in cats:
             cv2.rectangle(annotated_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
             cv2.putText(annotated_frame, 'Cat', (x, y-10), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
         
-        # Add detection count
+        # Add detection count and motion status
         cv2.putText(annotated_frame, f'Cats: {len(cats)}', (10, 30), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+        cv2.putText(annotated_frame, f'Motion: {"Yes" if motion_detected else "No"}', (10, 60), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
         
         return cats, annotated_frame

@@ -88,8 +88,11 @@ def process_frames():
                 time.sleep(0.1)
                 continue
             
-            # Run detection
-            detections, annotated_frame = detector.detect(frame)
+            # Get motion detection status
+            motion_detected = camera.get_motion_status()
+            
+            # Run detection only when motion is detected
+            detections, annotated_frame = detector.detect(frame, motion_detected)
             
             # Update global variables
             frame_count += 1
@@ -97,8 +100,8 @@ def process_frames():
             last_frame = frame
             last_annotated_frame = annotated_frame
             
-            # Sleep briefly to reduce CPU usage
-            time.sleep(0.01)
+            # Sleep briefly to reduce CPU usage (optimized for 1 FPS)
+            time.sleep(0.5)
             
         except Exception as e:
             logger.error(f"Error processing frame: {e}")
