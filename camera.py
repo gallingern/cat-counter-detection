@@ -70,30 +70,43 @@ class Camera:
     def _capture_loop(self):
         """Main capture loop that runs in a separate thread."""
         try:
-            # Initialize the camera using OpenCV with libcamera backend
-            # Try libcamera backend first (for Raspberry Pi OS 64-bit)
+            # Initialize the camera using OpenCV with V4L2 backend
+            # This is the correct backend for Raspberry Pi Camera Module v2
             self.camera = cv2.VideoCapture(0, cv2.CAP_V4L2)
             
-            # Set camera properties
-            self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.resolution[0])
-            self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.resolution[1])
-            self.camera.set(cv2.CAP_PROP_FPS, self.framerate)
+            # Set camera properties - use more conservative settings initially
+            self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # Start with lower resolution
+            self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            self.camera.set(cv2.CAP_PROP_FPS, 15)
             
-            # Note: Camera format will be auto-detected
+            # Set format to YUYV which is widely supported
+            self.camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('Y', 'U', 'Y', 'V'))
             
             # Check if camera opened successfully
             if not self.camera.isOpened():
-                # Try with libcamera backend explicitly
-                logger.info("Trying libcamera backend...")
-                self.camera = cv2.VideoCapture(0, cv2.CAP_GSTREAMER)
+                # Try default backend as fallback
+                logger.info("V4L2 failed, trying default backend...")
+                self.camera = cv2.VideoCapture(0, cv2.CAP_ANY)
                 if not self.camera.isOpened():
-                    # Try default backend
-                    logger.info("Trying default backend...")
-                    self.camera = cv2.VideoCapture(0, cv2.CAP_ANY)
-                    if not self.camera.isOpened():
-                        raise RuntimeError("Failed to open camera with any backend")
+                    raise RuntimeError("Failed to open camera with any backend")
             
             logger.info("Camera opened successfully")
+            
+            # Now try to set the desired resolution
+            actual_width = self.camera.get(cv2.CAP_PROP_FRAME_WIDTH)
+            actual_height = self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            logger.info(f"Camera initialized with resolution {actual_width}x{actual_height}")
+            
+            # If we got a lower resolution, try to upgrade to desired resolution
+            if actual_width < self.resolution[0] or actual_height < self.resolution[1]:
+                logger.info(f"Attempting to set resolution to {self.resolution[0]}x{self.resolution[1]}...")
+                self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.resolution[0])
+                self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.resolution[1])
+                
+                # Check if the change was successful
+                new_width = self.camera.get(cv2.CAP_PROP_FRAME_WIDTH)
+                new_height = self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT)
+                logger.info(f"Camera resolution set to {new_width}x{new_height}")
             
             # Allow camera to warm up
             time.sleep(2)
