@@ -52,6 +52,11 @@ find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 find . -name "*.pyc" -delete 2>/dev/null || true
 find . -name "*.pyo" -delete 2>/dev/null || true
 
+# Force kill any running Python processes to ensure clean restart
+echo "🔄 Force stopping any running processes..."
+sudo pkill -f "start_detection.py" 2>/dev/null || true
+sleep 1
+
 # Update systemd service if needed
 echo "🔧 Updating systemd service..."
 sudo tee /etc/systemd/system/cat-detection.service > /dev/null << EOL
