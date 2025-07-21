@@ -71,7 +71,7 @@ def process_frames():
     global camera, detector, frame_count, detection_count
     global last_frame, last_annotated_frame, processing
     
-    logger.info("Starting frame processing loop")
+    logger.info("Starting frame processing loop (maximum efficiency)")
     processing = True
     
     while processing:
@@ -79,13 +79,13 @@ def process_frames():
             # Check if camera and detector are available
             if camera is None or detector is None:
                 logger.error("Camera or detector not initialized")
-                time.sleep(1.0)
+                time.sleep(2.0)  # Longer sleep for efficiency
                 continue
             
             # Get a frame from the camera
             frame = camera.get_frame()
             if frame is None:
-                time.sleep(0.1)
+                time.sleep(1.0)  # Longer sleep when no frame
                 continue
             
             # Get motion detection status
@@ -100,12 +100,12 @@ def process_frames():
             last_frame = frame
             last_annotated_frame = annotated_frame
             
-            # Sleep briefly to reduce CPU usage (optimized for 1 FPS)
-            time.sleep(0.5)
+            # Sleep longer to reduce CPU usage (maximum efficiency)
+            time.sleep(1.0)
             
         except Exception as e:
             logger.error(f"Error processing frame: {e}")
-            time.sleep(1.0)
+            time.sleep(2.0)  # Longer sleep on error
     
     logger.info("Frame processing loop stopped")
 
