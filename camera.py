@@ -77,40 +77,11 @@ class Camera:
             logger.info("Opening camera with V4L2 backend...")
             self.camera = cv2.VideoCapture(0, cv2.CAP_V4L2)
             
-            # Set camera properties - use more conservative settings initially
-            logger.info("Setting initial camera properties...")
-            self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # Start with lower resolution
-            self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-            self.camera.set(cv2.CAP_PROP_FPS, 15)
+            # Don't set any camera properties - let it use native settings
+            logger.info("Using camera native settings...")
             
-            # Try multiple formats - start with auto-detect, then specific formats
-            formats_to_try = [
-                None,  # Auto-detect
-                cv2.VideoWriter_fourcc('Y', 'U', 'Y', 'V'),  # YUYV
-                cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),  # MJPG
-                cv2.VideoWriter_fourcc('R', 'G', 'B', '3'),  # RGB3
-            ]
-            
-            format_working = False
-            for i, fmt in enumerate(formats_to_try):
-                if fmt:
-                    logger.info(f"Trying format {i+1}/4: {fmt}")
-                    self.camera.set(cv2.CAP_PROP_FOURCC, fmt)
-                else:
-                    logger.info(f"Trying format {i+1}/4: auto-detect")
-                
-                # Test if we can read a frame
-                logger.info(f"Testing frame read for format {i+1}...")
-                ret, test_frame = self.camera.read()
-                if ret and test_frame is not None:
-                    format_working = True
-                    logger.info(f"Format {i+1} working: {fmt if fmt else 'auto-detect'}")
-                    break
-                else:
-                    logger.info(f"Format {i+1} failed: {fmt if fmt else 'auto-detect'}")
-            
-            if not format_working:
-                logger.warning("All formats failed, continuing with auto-detect")
+            # Use camera's default format - don't try to change it
+            logger.info("Using camera's default format...")
             
             # Check if camera opened successfully
             if not self.camera.isOpened():

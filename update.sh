@@ -88,6 +88,17 @@ if [ -d "./__pycache__" ] || [ -n "$(find . -name "*.pyc" 2>/dev/null)" ]; then
     echo "⚠️  Cache still exists, forcing removal..."
     sudo rm -rf ./__pycache__ 2>/dev/null || true
     sudo find . -name "*.pyc" -delete 2>/dev/null || true
+    sleep 1
+    # Double-check cache is cleared
+    if [ -d "./__pycache__" ] || [ -n "$(find . -name "*.pyc" 2>/dev/null)" ]; then
+        echo "❌ Cache clearing failed - manual intervention required"
+        echo "   Run: sudo find . -name '*.pyc' -delete && sudo find . -name '__pycache__' -exec rm -rf {} +"
+        exit 1
+    else
+        echo "✅ Cache successfully cleared"
+    fi
+else
+    echo "✅ Cache already cleared"
 fi
 
 # Update systemd service if needed
@@ -141,10 +152,12 @@ fi
 
 # Verify new code is being used by checking recent logs
 echo "🔍 Verifying new code is loaded..."
-sleep 2
-if sudo journalctl -u cat-detection -n 20 --no-pager | grep -q "Starting camera capture loop"; then
+sleep 5  # Wait longer for service to fully start and log messages
+if sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Starting camera capture loop"; then
     echo "✅ New camera code is loaded and working"
-elif sudo journalctl -u cat-detection -n 20 --no-pager | grep -q "Failed to read frame from camera"; then
+elif sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Camera native resolution"; then
+    echo "✅ New camera code is loaded (using native resolution)"
+elif sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Failed to read frame from camera"; then
     echo "⚠️  Old code detected - cache clearing may have failed"
     echo "   Consider manual cache clearing: sudo find . -name '*.pyc' -delete"
 else
