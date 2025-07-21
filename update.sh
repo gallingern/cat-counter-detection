@@ -61,6 +61,8 @@ if [ -d "./__pycache__" ] || [ -n "$(find . -name "*.pyc" 2>/dev/null)" ]; then
     echo "❌ Cache clearing failed - manual intervention required"
     echo "   Run: sudo find . -name '*.pyc' -delete && sudo find . -name '__pycache__' -exec rm -rf {} +"
     exit 1
+else
+    echo "✅ Cache cleared successfully"
 fi
 
 # Update systemd service
@@ -99,10 +101,10 @@ fi
 # Verify new code is loaded
 echo "🔍 Verifying new code..."
 sleep 3
-if sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Starting camera capture loop"; then
+if sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Setting camera to native resolution"; then
+    echo "✅ New camera code loaded (native resolution set)"
+elif sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Starting camera capture loop"; then
     echo "✅ New camera code loaded"
-elif sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Camera native resolution"; then
-    echo "✅ New camera code loaded (native resolution)"
 elif sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Failed to read frame from camera"; then
     echo "⚠️  Old code detected - cache clearing may have failed"
 else
