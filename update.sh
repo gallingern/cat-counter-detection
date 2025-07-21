@@ -58,6 +58,24 @@ sudo find . -name "*.pyo" -delete 2>/dev/null || true
 sudo rm -rf ./__pycache__ 2>/dev/null || true
 sudo rm -rf ./venv/__pycache__ 2>/dev/null || true
 
+# Additional aggressive cache clearing (same as manual commands)
+echo "🧹 Additional aggressive cache clearing..."
+# Check if cached files still exist
+if [ -n "$(find . -name "*.pyc" 2>/dev/null)" ]; then
+    echo "Found cached .pyc files, removing..."
+    sudo find . -name "*.pyc" -delete
+fi
+
+# Check if __pycache__ directories exist
+if [ -n "$(find . -name "__pycache__" 2>/dev/null)" ]; then
+    echo "Found __pycache__ directories, removing..."
+    sudo find . -name "__pycache__" -exec rm -rf {} + 2>/dev/null
+fi
+
+# Force clear cache manually (same commands as manual fix)
+sudo find . -name "*.pyc" -delete
+sudo find . -name "__pycache__" -exec rm -rf {} + 2>/dev/null
+
 # Force kill any running Python processes to ensure clean restart
 echo "🔄 Force stopping any running processes..."
 sudo pkill -f "start_detection.py" 2>/dev/null || true

@@ -70,11 +70,15 @@ class Camera:
     def _capture_loop(self):
         """Main capture loop that runs in a separate thread."""
         try:
+            logger.info("Starting camera capture loop...")
+            
             # Initialize the camera using OpenCV with V4L2 backend
             # This is the correct backend for Raspberry Pi Camera Module v2
+            logger.info("Opening camera with V4L2 backend...")
             self.camera = cv2.VideoCapture(0, cv2.CAP_V4L2)
             
             # Set camera properties - use more conservative settings initially
+            logger.info("Setting initial camera properties...")
             self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # Start with lower resolution
             self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
             self.camera.set(cv2.CAP_PROP_FPS, 15)
@@ -88,19 +92,22 @@ class Camera:
             ]
             
             format_working = False
-            for fmt in formats_to_try:
+            for i, fmt in enumerate(formats_to_try):
                 if fmt:
+                    logger.info(f"Trying format {i+1}/4: {fmt}")
                     self.camera.set(cv2.CAP_PROP_FOURCC, fmt)
-                    logger.info(f"Trying format: {fmt}")
+                else:
+                    logger.info(f"Trying format {i+1}/4: auto-detect")
                 
                 # Test if we can read a frame
+                logger.info(f"Testing frame read for format {i+1}...")
                 ret, test_frame = self.camera.read()
                 if ret and test_frame is not None:
                     format_working = True
-                    logger.info(f"Format working: {fmt if fmt else 'auto-detect'}")
+                    logger.info(f"Format {i+1} working: {fmt if fmt else 'auto-detect'}")
                     break
                 else:
-                    logger.info(f"Format failed: {fmt if fmt else 'auto-detect'}")
+                    logger.info(f"Format {i+1} failed: {fmt if fmt else 'auto-detect'}")
             
             if not format_working:
                 logger.warning("All formats failed, continuing with auto-detect")
@@ -140,6 +147,7 @@ class Camera:
                     warmup_success = True
                     logger.info(f"Camera warmed up successfully after {i+1} attempts")
                     break
+                logger.info(f"Warm-up attempt {i+1} failed")
                 time.sleep(0.5)
             
             if not warmup_success:
