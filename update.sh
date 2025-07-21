@@ -6,8 +6,6 @@
 # For full installation, use install.sh instead.
 
 echo "=== Simple Cat Detection System Update ==="
-echo "This script will update the system and restart the service."
-echo ""
 
 # Check if git repository exists
 if [ ! -d ".git" ]; then
@@ -24,8 +22,7 @@ if [ "$GIT_AVAILABLE" = true ]; then
     if git pull; then
         echo "✅ Git pull successful"
     else
-        echo "❌ Git pull failed"
-        echo "   Continuing with service restart..."
+        echo "❌ Git pull failed - continuing with service restart..."
     fi
 fi
 
@@ -34,93 +31,39 @@ echo "🔧 Activating virtual environment..."
 if [ -d "venv" ]; then
     source venv/bin/activate
     if [ $? -ne 0 ]; then
-        echo "❌ Failed to activate virtual environment"
-        echo "   Recreating virtual environment..."
+        echo "❌ Failed to activate virtual environment - recreating..."
         rm -rf venv
         python3 -m venv venv
         source venv/bin/activate
     fi
 else
-    echo "❌ Virtual environment not found"
-    echo "   Please run install.sh for full setup"
+    echo "❌ Virtual environment not found - please run install.sh for full setup"
     exit 1
 fi
 
-# Comprehensive Python cache clearing to prevent old code loading
-echo "🧹 Clearing Python cache (comprehensive)..."
-# Remove all __pycache__ directories recursively
-sudo find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-# Remove all .pyc files
-sudo find . -name "*.pyc" -delete 2>/dev/null || true
-# Remove all .pyo files
-sudo find . -name "*.pyo" -delete 2>/dev/null || true
-# Remove any remaining cache directories
-sudo rm -rf ./__pycache__ 2>/dev/null || true
-sudo rm -rf ./venv/__pycache__ 2>/dev/null || true
-
-# Additional aggressive cache clearing (same as manual commands)
-echo "🧹 Additional aggressive cache clearing..."
-# Check if cached files still exist
-if [ -n "$(find . -name "*.pyc" 2>/dev/null)" ]; then
-    echo "Found cached .pyc files, removing..."
-    sudo find . -name "*.pyc" -delete
-fi
-
-# Check if __pycache__ directories exist
-if [ -n "$(find . -name "__pycache__" 2>/dev/null)" ]; then
-    echo "Found __pycache__ directories, removing..."
-    sudo find . -name "__pycache__" -exec rm -rf {} + 2>/dev/null
-fi
-
-# Force clear cache manually (same commands as manual fix)
-sudo find . -name "*.pyc" -delete
-sudo find . -name "__pycache__" -exec rm -rf {} + 2>/dev/null
-
-# Force kill any running Python processes to ensure clean restart
-echo "🔄 Force stopping any running processes..."
+# Stop service and processes first
+echo "🔄 Stopping services and processes..."
 sudo pkill -f "start_detection.py" 2>/dev/null || true
 sudo pkill -f "python.*cat-counter-detection" 2>/dev/null || true
-sleep 3
-
-# Stop the service if it's running
 if systemctl is-active --quiet cat-detection; then
-    echo "Stopping cat-detection service..."
     sudo systemctl stop cat-detection
-    sleep 2
+fi
+sleep 2
+
+# Clear Python cache efficiently
+echo "🧹 Clearing Python cache..."
+sudo find . -name "*.pyc" -delete 2>/dev/null || true
+sudo find . -name "*.pyo" -delete 2>/dev/null || true
+sudo find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
+# Verify cache is cleared
+if [ -d "./__pycache__" ] || [ -n "$(find . -name "*.pyc" 2>/dev/null)" ]; then
+    echo "❌ Cache clearing failed - manual intervention required"
+    echo "   Run: sudo find . -name '*.pyc' -delete && sudo find . -name '__pycache__' -exec rm -rf {} +"
+    exit 1
 fi
 
-# Verify cache is cleared after processes are stopped
-echo "🔍 Verifying cache is cleared..."
-echo "Checking for __pycache__ directories..."
-if [ -d "./__pycache__" ]; then
-    echo "Found ./__pycache__ directory"
-fi
-echo "Checking for .pyc files..."
-PYC_FILES=$(find . -name "*.pyc" 2>/dev/null)
-if [ -n "$PYC_FILES" ]; then
-    echo "Found .pyc files:"
-    echo "$PYC_FILES"
-fi
-
-if [ -d "./__pycache__" ] || [ -n "$PYC_FILES" ]; then
-    echo "⚠️  Cache still exists, forcing removal..."
-    sudo rm -rf ./__pycache__ 2>/dev/null || true
-    sudo find . -name "*.pyc" -delete 2>/dev/null || true
-    sleep 2
-    # Double-check cache is cleared
-    echo "Double-checking cache clearing..."
-    if [ -d "./__pycache__" ] || [ -n "$(find . -name "*.pyc" 2>/dev/null)" ]; then
-        echo "❌ Cache clearing failed - manual intervention required"
-        echo "   Run: sudo find . -name '*.pyc' -delete && sudo find . -name '__pycache__' -exec rm -rf {} +"
-        exit 1
-    else
-        echo "✅ Cache successfully cleared"
-    fi
-else
-    echo "✅ Cache already cleared"
-fi
-
-# Update systemd service if needed
+# Update systemd service
 echo "🔧 Updating systemd service..."
 sudo tee /etc/systemd/system/cat-detection.service > /dev/null << EOL
 [Unit]
@@ -140,76 +83,48 @@ Environment=PYTHONPATH=$(pwd)
 WantedBy=multi-user.target
 EOL
 
-# Force stop and restart the service to ensure new code loads
-echo "🔄 Restarting service with new code..."
+# Restart service
+echo "🔄 Restarting service..."
 sudo systemctl daemon-reload
-
-# Force stop the service
-if systemctl is-active --quiet cat-detection; then
-    echo "Stopping existing service..."
-    sudo systemctl stop cat-detection
-    sleep 1
-fi
-
-# Start the service with new code
-echo "Starting service with updated code..."
 sudo systemctl start cat-detection
-
-# Wait for service to fully start
-sleep 3
+sleep 5
 
 # Check service status
-echo "🔍 Checking service status..."
-if systemctl is-active --quiet cat-detection; then
-    echo "✅ Service is running"
-else
+if ! systemctl is-active --quiet cat-detection; then
     echo "❌ Service failed to start"
-    echo "   Checking logs..."
     sudo journalctl -u cat-detection -n 10 --no-pager
     exit 1
 fi
 
-# Verify new code is being used by checking recent logs
-echo "🔍 Verifying new code is loaded..."
-sleep 5  # Wait longer for service to fully start and log messages
+# Verify new code is loaded
+echo "🔍 Verifying new code..."
+sleep 3
 if sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Starting camera capture loop"; then
-    echo "✅ New camera code is loaded and working"
+    echo "✅ New camera code loaded"
 elif sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Camera native resolution"; then
-    echo "✅ New camera code is loaded (using native resolution)"
+    echo "✅ New camera code loaded (native resolution)"
 elif sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Failed to read frame from camera"; then
     echo "⚠️  Old code detected - cache clearing may have failed"
-    echo "   Consider manual cache clearing: sudo find . -name '*.pyc' -delete"
 else
-    echo "ℹ️  Service started, checking web interface..."
+    echo "ℹ️  Service started"
 fi
 
-# Check if web server is running
+# Check web server
 echo "🌐 Checking web server..."
 WEB_PORT=5000
 IP_ADDRESS=$(hostname -I | awk '{print $1}')
 WEB_URL="http://$IP_ADDRESS:$WEB_PORT"
 
-# Wait a moment for web server to start
-sleep 3
-
-# Try to connect to the web server
 if curl -s --head --fail "$WEB_URL" > /dev/null 2>&1; then
-    echo "✅ Web server is running at $WEB_URL"
-    WEB_OK=true
-else
-    echo "❌ Web server is not responding"
-    echo "   Checking service logs..."
-    sudo journalctl -u cat-detection -n 20 --no-pager
-    WEB_OK=false
-fi
-
-echo ""
-echo "=== Update Complete! ==="
-
-if [ "$WEB_OK" = true ]; then
+    echo "✅ Web server running at $WEB_URL"
+    echo ""
+    echo "=== Update Complete! ==="
     echo "✅ System updated successfully"
     echo "🌐 Web interface available at: $WEB_URL"
 else
+    echo "❌ Web server not responding"
+    echo ""
+    echo "=== Update Complete! ==="
     echo "⚠️  Update completed but web server may need attention"
     echo "   Check logs: sudo journalctl -u cat-detection -f"
 fi
