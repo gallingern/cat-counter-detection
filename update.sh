@@ -41,17 +41,10 @@ else
     exit 1
 fi
 
-# Stop service and processes first
+# Stop service and processes
 echo "🔄 Stopping services and processes..."
+sudo systemctl stop cat-detector 2>/dev/null || true
 sudo pkill -f "start_detection.py" 2>/dev/null || true
-sudo pkill -f "python.*cat-counter-detection" 2>/dev/null || true
-if systemctl is-active --quiet cat-detector; then
-    sudo systemctl stop cat-detector
-fi
-sleep 3
-
-# Wait for processes to fully terminate
-echo "⏳ Waiting for processes to terminate..."
 sleep 2
 
 # Clear Python cache
@@ -89,14 +82,16 @@ RestartSec=10
 WantedBy=multi-user.target
 EOL
 
-# Restart service
-echo "🔄 Restarting service..."
+# Start service
+echo "🔄 Starting service..."
 sudo systemctl daemon-reload
-sudo systemctl enable cat-detector
+sudo systemctl enable cat-detector 2>/dev/null
 sudo systemctl start cat-detector
+
+# Wait for service to start and check status
+echo "⏳ Waiting for service to start..."
 sleep 5
 
-# Check service status
 if ! systemctl is-active --quiet cat-detector; then
     echo "❌ Service failed to start"
     sudo journalctl -u cat-detector -n 10 --no-pager
@@ -111,7 +106,7 @@ if sudo journalctl -u cat-detector -n 50 --no-pager | grep -q "Setting camera to
 elif sudo journalctl -u cat-detector -n 50 --no-pager | grep -q "Starting camera capture loop"; then
     echo "✅ New camera code loaded"
 elif sudo journalctl -u cat-detector -n 50 --no-pager | grep -q "Failed to read frame from camera"; then
-    echo "⚠️  Old code detected - cache clearing may have failed"
+    echo "⚠️  Camera issues detected - check logs"
 else
     echo "ℹ️  Service started"
 fi
