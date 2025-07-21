@@ -48,9 +48,12 @@ fi
 
 # Clear Python cache to ensure new code loads
 echo "🧹 Clearing Python cache..."
-find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-find . -name "*.pyc" -delete 2>/dev/null || true
-find . -name "*.pyo" -delete 2>/dev/null || true
+sudo find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+sudo find . -name "*.pyc" -delete 2>/dev/null || true
+sudo find . -name "*.pyo" -delete 2>/dev/null || true
+
+# Also clear any remaining cache files
+rm -rf ./__pycache__ 2>/dev/null || true
 
 # Force kill any running Python processes to ensure clean restart
 echo "🔄 Force stopping any running processes..."
