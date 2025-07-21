@@ -35,14 +35,30 @@ class Camera:
         self.last_frame_gray = None
         self.motion_threshold = config.MOTION_THRESHOLD
         
+        # Clean up any existing libcamera processes
+        self._cleanup_existing_processes()
+        
         logger.info(f"Camera initialized with resolution {self.resolution}, "
                    f"framerate {self.framerate}, rotation {self.rotation}")
+    
+    def _cleanup_existing_processes(self):
+        """Clean up any existing libcamera-vid processes."""
+        try:
+            subprocess.run(['pkill', '-f', 'libcamera-vid'], 
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(1)
+            logger.info("Cleaned up existing libcamera-vid processes")
+        except Exception as e:
+            logger.warning(f"Could not cleanup processes: {e}")
     
     def start(self):
         """Start the camera capture thread."""
         if self.running:
             logger.warning("Camera is already running")
             return
+        
+        # Clean up any existing processes before starting
+        self._cleanup_existing_processes()
         
         self.running = True
         self.thread = threading.Thread(target=self._capture_loop)
@@ -58,13 +74,16 @@ class Camera:
         if self.process:
             try:
                 self.process.terminate()
-                self.process.wait(timeout=5)
+                self.process.wait(timeout=3)
             except subprocess.TimeoutExpired:
                 self.process.kill()
             except Exception as e:
                 logger.error(f"Error stopping libcamera-vid process: {e}")
             finally:
                 self.process = None
+        
+        # Clean up any remaining processes
+        self._cleanup_existing_processes()
         
         # Wait for thread to finish
         if hasattr(self, 'thread') and self.thread.is_alive():
@@ -98,10 +117,10 @@ class Camera:
     def _capture_loop(self):
         """Main capture loop that runs in a separate thread using libcamera-vid."""
         try:
-            logger.info("Starting camera capture loop with libcamera-vid (maximum efficiency)...")
+            logger.info("Starting camera capture loop with libcamera-vid (ultra efficiency)...")
             width, height = self.resolution
             
-            # Start libcamera-vid process with maximum efficiency parameters
+            # Start libcamera-vid process with ultra efficiency parameters
             cmd = [
                 '/usr/bin/libcamera-vid',
                 '-n',  # No preview
@@ -109,17 +128,19 @@ class Camera:
                 '--height', str(height),
                 '--framerate', str(self.framerate),
                 '--codec', 'mjpeg',  # Use MJPEG for easier frame extraction
-                '--quality', '50',  # Very low quality for maximum efficiency
-                '--bitrate', '500000',  # 500Kbps bitrate
+                '--quality', '30',  # Ultra low quality for maximum efficiency
+                '--bitrate', '200000',  # 200Kbps bitrate
                 '--inline',  # Inline headers for efficiency
                 '--flush',  # Flush buffers immediately
                 '--gain', '1.0',  # Fixed gain to reduce processing
                 '--exposure', 'normal',  # Normal exposure mode
+                '--awb', 'auto',  # Auto white balance
+                '--metering', 'centre',  # Centre metering
                 '-t', '0',  # Run indefinitely
                 '-o', '-'  # Output to stdout
             ]
             
-            logger.info(f"Starting libcamera-vid with maximum efficiency command: {' '.join(cmd)}")
+            logger.info(f"Starting libcamera-vid with ultra efficiency command: {' '.join(cmd)}")
             self.process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
@@ -129,20 +150,21 @@ class Camera:
             
             # Allow camera to warm up
             logger.info("Warming up camera...")
-            time.sleep(1)  # Reduced warm-up time
+            time.sleep(0.5)  # Minimal warm-up time
             
-            # Read frames from the stream with maximum efficiency buffer management
+            # Read frames from the stream with ultra efficiency buffer management
             frame_buffer = b''
             frame_count = 0
             skip_frames = 0  # Frame skipping counter
             
             while self.running:
                 try:
-                    # Read data from the process with smaller chunks for efficiency
-                    chunk = self.process.stdout.read(512)  # Even smaller chunks
+                    # Read data from the process with minimal chunks
+                    chunk = self.process.stdout.read(256)  # Minimal chunks
                     if not chunk:
                         logger.warning("No data received from libcamera-vid")
-                        break
+                        time.sleep(2)  # Wait longer before retry
+                        continue
                     
                     frame_buffer += chunk
                     
@@ -156,12 +178,12 @@ class Camera:
                             jpeg_data = frame_buffer[start:end]
                             frame_buffer = frame_buffer[end:]
                             
-                            # Skip every other frame for maximum efficiency
+                            # Skip most frames for ultra efficiency (process only every 4th frame)
                             skip_frames += 1
-                            if skip_frames % 2 == 0:
+                            if skip_frames % 4 != 0:
                                 continue
                             
-                            # Decode JPEG to numpy array with maximum efficiency parameters
+                            # Decode JPEG to numpy array with ultra efficiency parameters
                             arr = np.frombuffer(jpeg_data, dtype=np.uint8)
                             frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
                             
@@ -176,8 +198,8 @@ class Camera:
                                 elif self.rotation == 270:
                                     frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
                                 
-                                # Detect motion (only every 3rd frame for efficiency)
-                                if frame_count % 3 == 0:
+                                # Detect motion (only every 5th frame for ultra efficiency)
+                                if frame_count % 5 == 0:
                                     motion = self._detect_motion(frame)
                                     self.motion_detected = motion
                                 
@@ -186,7 +208,7 @@ class Camera:
                                     self.last_frame_time = time.time()
                                 
                                 # Log motion detection occasionally
-                                if frame_count % 20 == 0 and self.motion_detected:
+                                if frame_count % 50 == 0 and self.motion_detected:
                                     logger.info(f"Motion detected at frame {frame_count}")
                                     
                             else:
@@ -196,7 +218,7 @@ class Camera:
                             
                 except Exception as e:
                     logger.error(f"Error reading from libcamera-vid: {e}")
-                    break
+                    time.sleep(2)  # Wait before retry
                     
         except Exception as e:
             logger.error(f"Error in camera capture loop: {e}")
