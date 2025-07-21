@@ -62,7 +62,7 @@ fi
 # Install required packages (only if fresh install or forced)
 if [ "$FRESH_INSTALL" = true ] || [ "$1" = "--force-update" ]; then
     echo "📦 Installing required packages..."
-    sudo apt-get install -y python3-pip python3-opencv python3-flask python3-venv python3-full libraspberrypi-bin libraspberrypi-dev libraspberrypi0 opencv-data libcamera-utils
+    sudo apt-get install -y python3-pip python3-opencv python3-flask python3-venv python3-full libraspberrypi-bin libraspberrypi-dev libraspberrypi0 opencv-data libcamera-utils libcamera-apps
 else
     echo "📦 Skipping package installation (already installed)"
 fi
