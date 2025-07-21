@@ -45,8 +45,8 @@ fi
 echo "🔄 Stopping services and processes..."
 sudo pkill -f "start_detection.py" 2>/dev/null || true
 sudo pkill -f "python.*cat-counter-detection" 2>/dev/null || true
-if systemctl is-active --quiet cat-detection; then
-    sudo systemctl stop cat-detection
+if systemctl is-active --quiet cat-detector; then
+    sudo systemctl stop cat-detector
 fi
 sleep 3
 
@@ -71,19 +71,19 @@ fi
 
 # Update systemd service
 echo "🔧 Updating systemd service..."
-sudo tee /etc/systemd/system/cat-detection.service > /dev/null << EOL
+sudo tee /etc/systemd/system/cat-detector.service > /dev/null << EOL
 [Unit]
-Description=Simple Cat Detection Service
+Description=Cat Detection Service
 After=network.target
 
 [Service]
-ExecStart=$(pwd)/venv/bin/python $(pwd)/start_detection.py
+Type=simple
+User=pi
 WorkingDirectory=$(pwd)
-StandardOutput=inherit
-StandardError=inherit
+Environment=PATH=$(pwd)/venv/bin
+ExecStart=$(pwd)/venv/bin/python $(pwd)/start_detection.py
 Restart=always
-User=$USER
-Environment=PYTHONPATH=$(pwd)
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
@@ -92,24 +92,25 @@ EOL
 # Restart service
 echo "🔄 Restarting service..."
 sudo systemctl daemon-reload
-sudo systemctl start cat-detection
+sudo systemctl enable cat-detector
+sudo systemctl start cat-detector
 sleep 5
 
 # Check service status
-if ! systemctl is-active --quiet cat-detection; then
+if ! systemctl is-active --quiet cat-detector; then
     echo "❌ Service failed to start"
-    sudo journalctl -u cat-detection -n 10 --no-pager
+    sudo journalctl -u cat-detector -n 10 --no-pager
     exit 1
 fi
 
 # Verify new code is loaded
 echo "🔍 Verifying new code..."
 sleep 3
-if sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Setting camera to native resolution"; then
+if sudo journalctl -u cat-detector -n 50 --no-pager | grep -q "Setting camera to native resolution"; then
     echo "✅ New camera code loaded (native resolution set)"
-elif sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Starting camera capture loop"; then
+elif sudo journalctl -u cat-detector -n 50 --no-pager | grep -q "Starting camera capture loop"; then
     echo "✅ New camera code loaded"
-elif sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Failed to read frame from camera"; then
+elif sudo journalctl -u cat-detector -n 50 --no-pager | grep -q "Failed to read frame from camera"; then
     echo "⚠️  Old code detected - cache clearing may have failed"
 else
     echo "ℹ️  Service started"
@@ -132,5 +133,5 @@ else
     echo ""
     echo "=== Update Complete! ==="
     echo "⚠️  Update completed but web server may need attention"
-    echo "   Check logs: sudo journalctl -u cat-detection -f"
+    echo "   Check logs: sudo journalctl -u cat-detector -f"
 fi
