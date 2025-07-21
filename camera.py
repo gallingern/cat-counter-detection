@@ -93,13 +93,15 @@ class Camera:
             
             logger.info("Camera opened successfully")
             
-            # Get the camera's current resolution first
-            current_width = self.camera.get(cv2.CAP_PROP_FRAME_WIDTH)
-            current_height = self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT)
-            logger.info(f"Camera native resolution: {current_width}x{current_height}")
-
-            # Use the camera's native resolution instead of forcing our own
-            # We can scale down later in software if needed
+            # Set camera to its native resolution (3280x2464) to avoid pipeline errors
+            logger.info("Setting camera to native resolution (3280x2464)...")
+            self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 3280)
+            self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 2464)
+            
+            # Get the actual resolution that was set
+            actual_width = self.camera.get(cv2.CAP_PROP_FRAME_WIDTH)
+            actual_height = self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            logger.info(f"Camera resolution set to: {actual_width}x{actual_height}")
             
             # Allow camera to warm up with multiple test reads
             logger.info("Warming up camera...")
