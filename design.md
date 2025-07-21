@@ -31,16 +31,18 @@ The Cat Detection System is a lightweight, real-time cat detection application d
 ## Core Components
 
 ### 1. Camera Module (`camera.py`)
-**Purpose:** Manages video capture from Raspberry Pi Camera Module
+**Purpose:** Manages video capture from Raspberry Pi Camera Module using libcamera-still
 
 **Key Features:**
 - Threaded video capture for non-blocking operation
+- Uses libcamera-still subprocess for frame capture
 - Configurable resolution, framerate, and rotation
 - Frame buffering with thread-safe access
 - Automatic camera initialization and cleanup
 
 **Design Decisions:**
-- Uses OpenCV for optimal Raspberry Pi performance and Camera Module v2 support
+- Uses libcamera-still for robust Raspberry Pi camera support
+- OpenCV is only used for JPEG decoding/encoding and detection
 - Threaded capture loop prevents blocking the main application
 - Thread-safe frame access with locks
 - Configurable parameters via config.py

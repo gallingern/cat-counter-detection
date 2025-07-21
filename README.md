@@ -14,6 +14,8 @@ This project provides a simple cat detection system that:
 - Raspberry Pi Zero 2 W (or compatible model)
 - Raspberry Pi Camera Module v2 (with imx219 sensor)
 - Raspberry Pi OS 64-bit (Bookworm or newer recommended)
+- libcamera-utils (for camera capture)
+- OpenCV (for cat detection only)
 
 ## Installation
 
@@ -28,6 +30,8 @@ This project provides a simple cat detection system that:
    chmod +x install.sh
    ./install.sh
    ```
+
+   This will install libcamera-utils for camera capture and OpenCV for detection.
 
 3. The script will:
    - Install required dependencies

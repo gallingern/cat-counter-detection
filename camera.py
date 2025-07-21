@@ -1,5 +1,5 @@
 """
-Simple camera interface using OpenCV for Raspberry Pi Camera Module v2.
+Simple camera interface using libcamera-still subprocess for Raspberry Pi Camera Module v2.
 Optimized for Pi Zero 2 W with imx219 sensor.
 """
 
@@ -7,8 +7,9 @@ import io
 import time
 import logging
 import threading
-import cv2
+import subprocess
 import numpy as np
+import cv2
 try:
     from . import config
 except ImportError:
@@ -17,15 +18,13 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 class Camera:
-    """Simple camera interface using OpenCV for Raspberry Pi Camera Module v2.
-    Optimized for Pi Zero 2 W with imx219 sensor and improved image quality."""
+    """Simple camera interface using libcamera-still subprocess for Raspberry Pi Camera Module v2."""
     
     def __init__(self):
         """Initialize the camera with settings from config."""
         self.resolution = config.CAMERA_RESOLUTION
         self.framerate = config.CAMERA_FRAMERATE
         self.rotation = config.CAMERA_ROTATION
-        self.camera = None
         self.frame = None
         self.last_frame_time = 0
         self.running = False
@@ -56,114 +55,76 @@ class Camera:
             if self.thread.is_alive():
                 logger.warning("Camera thread did not stop gracefully")
         
-        # Close camera
-        if self.camera:
-            try:
-                self.camera.release()
-            except Exception as e:
-                logger.error(f"Error closing camera: {e}")
-            finally:
-                self.camera = None
-        
         logger.info("Camera stopped")
     
     def _capture_loop(self):
-        """Main capture loop that runs in a separate thread."""
+        """Main capture loop that runs in a separate thread using libcamera-still."""
         try:
-            logger.info("Starting camera capture loop...")
-            
-            # Try to set camera format using v4l2-ctl before opening with OpenCV
-            import subprocess
-            try:
-                logger.info("Setting camera format to native resolution via v4l2-ctl...")
-                subprocess.run([
-                    'v4l2-ctl', '--device=/dev/video0',
-                    '--set-fmt-video=width=3280,height=2464,pixelformat=YUYV'
-                ], check=True, capture_output=True)
-                logger.info("Camera format set successfully")
-            except subprocess.CalledProcessError as e:
-                logger.warning(f"Failed to set camera format via v4l2-ctl: {e}")
-            except FileNotFoundError:
-                logger.warning("v4l2-ctl not found, proceeding with OpenCV defaults")
-            
-            # Initialize the camera using OpenCV with V4L2 backend
-            logger.info("Opening camera with V4L2 backend...")
-            self.camera = cv2.VideoCapture(0, cv2.CAP_V4L2)
-            
-            # Check if camera opened successfully
-            if not self.camera.isOpened():
-                # Try default backend as fallback
-                logger.info("V4L2 failed, trying default backend...")
-                self.camera = cv2.VideoCapture(0, cv2.CAP_ANY)
-                if not self.camera.isOpened():
-                    raise RuntimeError("Failed to open camera with any backend")
-            
-            logger.info("Camera opened successfully")
-            
-            # Set camera to its native resolution (3280x2464) to avoid pipeline errors
-            logger.info("Setting camera to native resolution (3280x2464)...")
-            self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 3280)
-            self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 2464)
-            
-            # Get the actual resolution that was set
-            actual_width = self.camera.get(cv2.CAP_PROP_FRAME_WIDTH)
-            actual_height = self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT)
-            logger.info(f"Camera resolution set to: {actual_width}x{actual_height}")
-            
-            # Allow camera to warm up with multiple test reads
-            logger.info("Warming up camera...")
+            logger.info("Starting camera capture loop with libcamera-still...")
+            width, height = self.resolution
+            interval = 1.0 / self.framerate
             warmup_success = False
-            for i in range(10):  # Try up to 10 times
-                ret, test_frame = self.camera.read()
-                if ret and test_frame is not None:
+            for i in range(10):
+                frame = self._capture_frame(width, height)
+                if frame is not None:
                     warmup_success = True
                     logger.info(f"Camera warmed up successfully after {i+1} attempts")
                     break
                 logger.info(f"Warm-up attempt {i+1} failed")
                 time.sleep(0.5)
-            
             if not warmup_success:
                 logger.warning("Camera warm-up failed, continuing anyway")
-            
-            # Additional warm-up time
             time.sleep(1)
-            
-            # Capture frames continuously
-            consecutive_failures = 0
             while self.running:
-                ret, frame = self.camera.read()
-                if not ret:
-                    consecutive_failures += 1
-                    if consecutive_failures <= 5:
-                        logger.warning(f"Failed to read frame from camera (attempt {consecutive_failures})")
-                    elif consecutive_failures == 6:
-                        logger.error("Multiple consecutive camera read failures - camera may not be accessible")
-                    time.sleep(0.1)
-                    continue
-                
-                # Reset failure counter on successful read
-                consecutive_failures = 0
-                
-                # Apply rotation if needed
-                if self.rotation == 90:
-                    frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
-                elif self.rotation == 180:
-                    frame = cv2.rotate(frame, cv2.ROTATE_180)
-                elif self.rotation == 270:
-                    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-                
-                # Update the frame
-                with self.lock:
-                    self.frame = frame.copy()
-                    self.last_frame_time = time.time()
-                
-                # Sleep to maintain framerate
-                time.sleep(1.0 / self.framerate)
-                
+                frame = self._capture_frame(width, height)
+                if frame is not None:
+                    # Apply rotation if needed
+                    if self.rotation == 90:
+                        frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+                    elif self.rotation == 180:
+                        frame = cv2.rotate(frame, cv2.ROTATE_180)
+                    elif self.rotation == 270:
+                        frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                    with self.lock:
+                        self.frame = frame.copy()
+                        self.last_frame_time = time.time()
+                else:
+                    logger.warning("Failed to capture frame from libcamera-still")
+                time.sleep(interval)
         except Exception as e:
             logger.error(f"Error in camera capture loop: {e}")
             self.running = False
-    
+
+    def _capture_frame(self, width, height):
+        """Capture a single frame using libcamera-still and return as numpy array (BGR)."""
+        try:
+            cmd = [
+                'libcamera-still',
+                '-n',  # No preview
+                '-t', '1',  # Minimal timeout (ms)
+                '--width', str(width),
+                '--height', str(height),
+                '--encoding', 'jpeg',
+                '-o', '-'  # Output to stdout
+            ]
+            proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
+            if proc.returncode != 0:
+                logger.error(f"libcamera-still error: {proc.stderr.decode().strip()}")
+                return None
+            jpeg_bytes = proc.stdout
+            if not jpeg_bytes:
+                logger.warning("No data received from libcamera-still")
+                return None
+            # Decode JPEG to numpy array (BGR)
+            arr = np.frombuffer(jpeg_bytes, dtype=np.uint8)
+            frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+            if frame is None:
+                logger.warning("Failed to decode JPEG from libcamera-still output")
+            return frame
+        except Exception as e:
+            logger.error(f"Exception in _capture_frame: {e}")
+            return None
+
     def get_frame(self):
         """Get the latest frame from the camera."""
         with self.lock:
@@ -176,7 +137,6 @@ class Camera:
         frame = self.get_frame()
         if frame is None:
             return None
-        
         # Convert to JPEG
         ret, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, quality])
-        return jpeg.tobytes()
+        return jpeg.tobytes() if ret else None
