@@ -142,7 +142,7 @@ fi
 # Verify new code is being used by checking recent logs
 echo "🔍 Verifying new code is loaded..."
 sleep 2
-if sudo journalctl -u cat-detection -n 20 --no-pager | grep -q "Camera initialized with resolution"; then
+if sudo journalctl -u cat-detection -n 20 --no-pager | grep -q "Starting camera capture loop"; then
     echo "✅ New camera code is loaded and working"
 elif sudo journalctl -u cat-detection -n 20 --no-pager | grep -q "Failed to read frame from camera"; then
     echo "⚠️  Old code detected - cache clearing may have failed"

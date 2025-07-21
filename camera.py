@@ -122,21 +122,13 @@ class Camera:
             
             logger.info("Camera opened successfully")
             
-            # Now try to set the desired resolution
-            actual_width = self.camera.get(cv2.CAP_PROP_FRAME_WIDTH)
-            actual_height = self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT)
-            logger.info(f"Camera initialized with resolution {actual_width}x{actual_height}")
-            
-            # If we got a lower resolution, try to upgrade to desired resolution
-            if actual_width < self.resolution[0] or actual_height < self.resolution[1]:
-                logger.info(f"Attempting to set resolution to {self.resolution[0]}x{self.resolution[1]}...")
-                self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.resolution[0])
-                self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.resolution[1])
-                
-                # Check if the change was successful
-                new_width = self.camera.get(cv2.CAP_PROP_FRAME_WIDTH)
-                new_height = self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT)
-                logger.info(f"Camera resolution set to {new_width}x{new_height}")
+            # Get the camera's current resolution first
+            current_width = self.camera.get(cv2.CAP_PROP_FRAME_WIDTH)
+            current_height = self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            logger.info(f"Camera native resolution: {current_width}x{current_height}")
+
+            # Use the camera's native resolution instead of forcing our own
+            # We can scale down later in software if needed
             
             # Allow camera to warm up with multiple test reads
             logger.info("Warming up camera...")
