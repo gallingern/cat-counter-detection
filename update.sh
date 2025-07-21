@@ -80,16 +80,35 @@ sudo find . -name "__pycache__" -exec rm -rf {} + 2>/dev/null
 echo "🔄 Force stopping any running processes..."
 sudo pkill -f "start_detection.py" 2>/dev/null || true
 sudo pkill -f "python.*cat-counter-detection" 2>/dev/null || true
-sleep 2
+sleep 3
 
-# Verify cache is cleared
+# Stop the service if it's running
+if systemctl is-active --quiet cat-detection; then
+    echo "Stopping cat-detection service..."
+    sudo systemctl stop cat-detection
+    sleep 2
+fi
+
+# Verify cache is cleared after processes are stopped
 echo "🔍 Verifying cache is cleared..."
-if [ -d "./__pycache__" ] || [ -n "$(find . -name "*.pyc" 2>/dev/null)" ]; then
+echo "Checking for __pycache__ directories..."
+if [ -d "./__pycache__" ]; then
+    echo "Found ./__pycache__ directory"
+fi
+echo "Checking for .pyc files..."
+PYC_FILES=$(find . -name "*.pyc" 2>/dev/null)
+if [ -n "$PYC_FILES" ]; then
+    echo "Found .pyc files:"
+    echo "$PYC_FILES"
+fi
+
+if [ -d "./__pycache__" ] || [ -n "$PYC_FILES" ]; then
     echo "⚠️  Cache still exists, forcing removal..."
     sudo rm -rf ./__pycache__ 2>/dev/null || true
     sudo find . -name "*.pyc" -delete 2>/dev/null || true
-    sleep 1
+    sleep 2
     # Double-check cache is cleared
+    echo "Double-checking cache clearing..."
     if [ -d "./__pycache__" ] || [ -n "$(find . -name "*.pyc" 2>/dev/null)" ]; then
         echo "❌ Cache clearing failed - manual intervention required"
         echo "   Run: sudo find . -name '*.pyc' -delete && sudo find . -name '__pycache__' -exec rm -rf {} +"
