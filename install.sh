@@ -67,6 +67,23 @@ else
     echo "📦 Skipping package installation (already installed)"
 fi
 
+# Ensure Haar cascade file for cat detection is present
+echo "🔍 Ensuring Haar cascade file for cat detection is installed..."
+CASCADE_DEST="/usr/local/share/opencv4/haarcascades/haarcascade_frontalcatface.xml"
+if [ ! -f "$CASCADE_DEST" ] && ! ls /usr/share/opencv*/haarcascades/haarcascade_frontalcatface.xml 1>/dev/null 2>&1; then
+    echo "Downloading haarcascade_frontalcatface.xml to $CASCADE_DEST"
+    sudo mkdir -p "$(dirname "$CASCADE_DEST")"
+    sudo curl -fsSL -o "$CASCADE_DEST" https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/haarcascade_frontalcatface.xml
+    if [ -f "$CASCADE_DEST" ]; then
+        echo "✅ Haar cascade file installed."
+    else
+        echo "❌ Failed to download Haar cascade file!"
+        exit 1
+    fi
+else
+    echo "✅ Haar cascade file already present."
+fi
+
 # Create virtual environment
 echo "🐍 Creating Python virtual environment..."
 if [ -d "venv" ]; then
