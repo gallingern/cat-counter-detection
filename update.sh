@@ -111,22 +111,7 @@ else
     echo "ℹ️  Service started"
 fi
 
-# Check web server
-echo "🌐 Checking web server..."
-WEB_PORT=5000
-IP_ADDRESS=$(hostname -I | awk '{print $1}')
-WEB_URL="http://$IP_ADDRESS:$WEB_PORT"
-
-if curl -s --head --fail "$WEB_URL" > /dev/null 2>&1; then
-    echo "✅ Web server running at $WEB_URL"
-    echo ""
-    echo "=== Update Complete! ==="
-    echo "✅ System updated successfully"
-    echo "🌐 Web interface available at: $WEB_URL"
-else
-    echo "❌ Web server not responding"
-    echo ""
-    echo "=== Update Complete! ==="
-    echo "⚠️  Update completed but web server may need attention"
-    echo "   Check logs: sudo journalctl -u cat-detector -f"
-fi
+# Print completion message
+echo ""
+echo "=== Update Complete! ==="
+echo "Check logs: sudo journalctl -u cat-detector -f"
