@@ -1,4 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# install.sh — Install dependencies and configure camera for IMX219 on Pi Zero 2 W
+
+set -e
 
 # Simple Cat Detection System Installation Script
 # For Raspberry Pi Zero 2 W with Camera Module v2
@@ -285,3 +288,49 @@ if [ "$REBOOT_REQUIRED" = true ]; then
         echo "Please reboot manually when convenient."
     fi
 fi
+
+# Camera setup steps for IMX219 on Pi Zero 2 W
+
+# 1–4. Apply unified diff to /boot/firmware/config.txt
+sudo patch /boot/firmware/config.txt << 'EOF'
+--- a/config.txt
++++ b/config.txt
+@@
+-dtoverlay=vc4-fkms-v3d
++dtoverlay=vc4-kms-v3d
+@@
+-#disable_fw_kms_setup=1
++#disable_fw_kms_setup=1
+@@ [all]
+-start_x=1
+-dtoverlay=imx219
++#start_x=1
++#dtoverlay=imx219
+@@
+-#dtparam=i2c_arm=on
++dtparam=i2c_arm=on
+@@
++# Tell the kernel there’s an IMX219 on I²C-1
++dtoverlay=imx219
+@@ [all]
+-gpu_mem=64
++gpu_mem=128
+EOF
+
+# 5. Add udev rule for /dev/vcio
+sudo tee /etc/udev/rules.d/99-vcio.rules << 'EOF'
+KERNEL=="vcio", MODE="0666"
+EOF
+
+# 5. Add udev rule for /dev/dma_heap
+sudo tee /etc/udev/rules.d/99-dma_heap.rules << 'EOF'
+SUBSYSTEM=="dma_heap", GROUP="video", MODE="0660"
+EOF
+
+# 5. Add 'pi' user to 'video' group
+sudo usermod -aG video pi
+
+# 6. Reload udev rules and reboot
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+sudo reboot
