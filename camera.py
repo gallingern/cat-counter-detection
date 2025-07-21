@@ -79,8 +79,31 @@ class Camera:
             self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
             self.camera.set(cv2.CAP_PROP_FPS, 15)
             
-            # Set format to YUYV which is widely supported
-            self.camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('Y', 'U', 'Y', 'V'))
+            # Try multiple formats - start with auto-detect, then specific formats
+            formats_to_try = [
+                None,  # Auto-detect
+                cv2.VideoWriter_fourcc('Y', 'U', 'Y', 'V'),  # YUYV
+                cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),  # MJPG
+                cv2.VideoWriter_fourcc('R', 'G', 'B', '3'),  # RGB3
+            ]
+            
+            format_working = False
+            for fmt in formats_to_try:
+                if fmt:
+                    self.camera.set(cv2.CAP_PROP_FOURCC, fmt)
+                    logger.info(f"Trying format: {fmt}")
+                
+                # Test if we can read a frame
+                ret, test_frame = self.camera.read()
+                if ret and test_frame is not None:
+                    format_working = True
+                    logger.info(f"Format working: {fmt if fmt else 'auto-detect'}")
+                    break
+                else:
+                    logger.info(f"Format failed: {fmt if fmt else 'auto-detect'}")
+            
+            if not format_working:
+                logger.warning("All formats failed, continuing with auto-detect")
             
             # Check if camera opened successfully
             if not self.camera.isOpened():
@@ -108,8 +131,22 @@ class Camera:
                 new_height = self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT)
                 logger.info(f"Camera resolution set to {new_width}x{new_height}")
             
-            # Allow camera to warm up
-            time.sleep(2)
+            # Allow camera to warm up with multiple test reads
+            logger.info("Warming up camera...")
+            warmup_success = False
+            for i in range(10):  # Try up to 10 times
+                ret, test_frame = self.camera.read()
+                if ret and test_frame is not None:
+                    warmup_success = True
+                    logger.info(f"Camera warmed up successfully after {i+1} attempts")
+                    break
+                time.sleep(0.5)
+            
+            if not warmup_success:
+                logger.warning("Camera warm-up failed, continuing anyway")
+            
+            # Additional warm-up time
+            time.sleep(1)
             
             # Capture frames continuously
             consecutive_failures = 0
