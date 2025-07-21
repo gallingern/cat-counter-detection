@@ -46,19 +46,31 @@ else
     exit 1
 fi
 
-# Clear Python cache to ensure new code loads
-echo "🧹 Clearing Python cache..."
+# Comprehensive Python cache clearing to prevent old code loading
+echo "🧹 Clearing Python cache (comprehensive)..."
+# Remove all __pycache__ directories recursively
 sudo find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+# Remove all .pyc files
 sudo find . -name "*.pyc" -delete 2>/dev/null || true
+# Remove all .pyo files
 sudo find . -name "*.pyo" -delete 2>/dev/null || true
-
-# Also clear any remaining cache files
-rm -rf ./__pycache__ 2>/dev/null || true
+# Remove any remaining cache directories
+sudo rm -rf ./__pycache__ 2>/dev/null || true
+sudo rm -rf ./venv/__pycache__ 2>/dev/null || true
 
 # Force kill any running Python processes to ensure clean restart
 echo "🔄 Force stopping any running processes..."
 sudo pkill -f "start_detection.py" 2>/dev/null || true
-sleep 1
+sudo pkill -f "python.*cat-counter-detection" 2>/dev/null || true
+sleep 2
+
+# Verify cache is cleared
+echo "🔍 Verifying cache is cleared..."
+if [ -d "./__pycache__" ] || [ -n "$(find . -name "*.pyc" 2>/dev/null)" ]; then
+    echo "⚠️  Cache still exists, forcing removal..."
+    sudo rm -rf ./__pycache__ 2>/dev/null || true
+    sudo find . -name "*.pyc" -delete 2>/dev/null || true
+fi
 
 # Update systemd service if needed
 echo "🔧 Updating systemd service..."
@@ -107,6 +119,18 @@ else
     echo "   Checking logs..."
     sudo journalctl -u cat-detection -n 10 --no-pager
     exit 1
+fi
+
+# Verify new code is being used by checking recent logs
+echo "🔍 Verifying new code is loaded..."
+sleep 2
+if sudo journalctl -u cat-detection -n 20 --no-pager | grep -q "Camera initialized with resolution"; then
+    echo "✅ New camera code is loaded and working"
+elif sudo journalctl -u cat-detection -n 20 --no-pager | grep -q "Failed to read frame from camera"; then
+    echo "⚠️  Old code detected - cache clearing may have failed"
+    echo "   Consider manual cache clearing: sudo find . -name '*.pyc' -delete"
+else
+    echo "ℹ️  Service started, checking web interface..."
 fi
 
 # Check if web server is running
