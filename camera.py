@@ -72,16 +72,23 @@ class Camera:
         try:
             logger.info("Starting camera capture loop...")
             
+            # Try to set camera format using v4l2-ctl before opening with OpenCV
+            import subprocess
+            try:
+                logger.info("Setting camera format to native resolution via v4l2-ctl...")
+                subprocess.run([
+                    'v4l2-ctl', '--device=/dev/video0',
+                    '--set-fmt-video=width=3280,height=2464,pixelformat=YUYV'
+                ], check=True, capture_output=True)
+                logger.info("Camera format set successfully")
+            except subprocess.CalledProcessError as e:
+                logger.warning(f"Failed to set camera format via v4l2-ctl: {e}")
+            except FileNotFoundError:
+                logger.warning("v4l2-ctl not found, proceeding with OpenCV defaults")
+            
             # Initialize the camera using OpenCV with V4L2 backend
-            # This is the correct backend for Raspberry Pi Camera Module v2
             logger.info("Opening camera with V4L2 backend...")
             self.camera = cv2.VideoCapture(0, cv2.CAP_V4L2)
-            
-            # Don't set any camera properties - let it use native settings
-            logger.info("Using camera native settings...")
-            
-            # Use camera's default format - don't try to change it
-            logger.info("Using camera's default format...")
             
             # Check if camera opened successfully
             if not self.camera.isOpened():
