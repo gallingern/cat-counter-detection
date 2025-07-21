@@ -99,7 +99,7 @@ class Camera:
         """Capture a single frame using libcamera-still and return as numpy array (BGR)."""
         try:
             cmd = [
-                'libcamera-still',
+                '/usr/bin/libcamera-still',
                 '-n',  # No preview
                 '-t', '1',  # Minimal timeout (ms)
                 '--width', str(width),
