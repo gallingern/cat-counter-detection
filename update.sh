@@ -48,13 +48,26 @@ sudo pkill -f "python.*cat-counter-detection" 2>/dev/null || true
 if systemctl is-active --quiet cat-detection; then
     sudo systemctl stop cat-detection
 fi
+sleep 3
+
+# Wait for processes to fully terminate
+echo "⏳ Waiting for processes to terminate..."
 sleep 2
 
-# Clear Python cache efficiently
+# Clear Python cache with multiple attempts
 echo "🧹 Clearing Python cache..."
+for i in {1..3}; do
+    echo "   Attempt $i/3..."
+    sudo find . -name "*.pyc" -delete 2>/dev/null || true
+    sudo find . -name "*.pyo" -delete 2>/dev/null || true
+    sudo find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+    sleep 1
+done
+
+# Force clear any remaining cache
+echo "🧹 Force clearing remaining cache..."
 sudo find . -name "*.pyc" -delete 2>/dev/null || true
-sudo find . -name "*.pyo" -delete 2>/dev/null || true
-sudo find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+sudo find . -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 # Verify cache is cleared
 if [ -d "./__pycache__" ] || [ -n "$(find . -name "*.pyc" 2>/dev/null)" ]; then
