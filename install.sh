@@ -192,7 +192,20 @@ chmod +x install.sh
 # Fix camera permissions
 echo "🔧 Fixing camera permissions..."
 sudo usermod -a -G video "$USER"
-sudo chmod 666 /dev/video* 2>/dev/null || echo "Camera devices not found yet"
+
+# Create udev rule to automatically set camera permissions
+echo "📝 Creating udev rule for camera permissions..."
+sudo tee /etc/udev/rules.d/99-camera-permissions.rules > /dev/null << EOL
+# Set camera device permissions for video group
+SUBSYSTEM=="video4linux", GROUP="video", MODE="0666"
+EOL
+
+# Apply udev rules immediately
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+
+# Also try to set permissions on existing devices (if any)
+sudo chmod 666 /dev/video* 2>/dev/null || echo "Camera devices not found yet (will be set after reboot)"
 
 # Test the installation
 echo "🧪 Testing installation..."
