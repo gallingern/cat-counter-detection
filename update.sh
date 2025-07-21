@@ -29,8 +29,8 @@ if [ "$GIT_AVAILABLE" = true ]; then
     fi
 fi
 
-# Check and update dependencies
-echo "🔧 Checking dependencies..."
+# Activate virtual environment
+echo "🔧 Activating virtual environment..."
 if [ -d "venv" ]; then
     source venv/bin/activate
     if [ $? -ne 0 ]; then
@@ -40,21 +40,17 @@ if [ -d "venv" ]; then
         python3 -m venv venv
         source venv/bin/activate
     fi
-    
-    # Check if packages are installed
-    if ! python -c "import cv2, flask, numpy" 2>/dev/null; then
-        echo "⚠️  Some dependencies missing, installing flask..."
-        # Use system OpenCV and numpy packages installed via apt
-        # Avoid installing opencv-python from pip to reduce overhead
-        pip install --upgrade flask
-    else
-        echo "✅ All Python dependencies already installed"
-    fi
 else
     echo "❌ Virtual environment not found"
     echo "   Please run install.sh for full setup"
     exit 1
 fi
+
+# Clear Python cache to ensure new code loads
+echo "🧹 Clearing Python cache..."
+find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+find . -name "*.pyc" -delete 2>/dev/null || true
+find . -name "*.pyo" -delete 2>/dev/null || true
 
 # Update systemd service if needed
 echo "🔧 Updating systemd service..."
@@ -76,19 +72,23 @@ Environment=PYTHONPATH=$(pwd)
 WantedBy=multi-user.target
 EOL
 
-# Restart the service
-echo "🔄 Restarting service..."
+# Force stop and restart the service to ensure new code loads
+echo "🔄 Restarting service with new code..."
 sudo systemctl daemon-reload
+
+# Force stop the service
 if systemctl is-active --quiet cat-detection; then
-    echo "Restarting existing service..."
-    sudo systemctl restart cat-detection
-else
-    echo "Starting service..."
-    sudo systemctl start cat-detection
+    echo "Stopping existing service..."
+    sudo systemctl stop cat-detection
+    sleep 1
 fi
 
-# Wait a moment for service to start
-sleep 2
+# Start the service with new code
+echo "Starting service with updated code..."
+sudo systemctl start cat-detection
+
+# Wait for service to fully start
+sleep 3
 
 # Check service status
 echo "🔍 Checking service status..."
