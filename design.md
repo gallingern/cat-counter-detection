@@ -62,6 +62,7 @@ The Cat Detection System is a lightweight, real-time cat detection application d
 - Pre-quantized INT8 model minimizes CPU usage
 - Motion gating avoids unnecessary inference
 - Visual annotation for user feedback
+- OpenCV still used for image preprocessing (resize, color conversion) and drawing
 
 
 ### 3. Web Application (`app.py`)

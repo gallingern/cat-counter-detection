@@ -80,22 +80,63 @@ if [ ! -f "$MODEL_FILE" ] || [ "$1" = "--force-reinstall" ]; then
     echo "Downloading TFLite model..."
     echo "Note: This will download a COCO-trained model that can detect cats (class 16)"
     
-    # Download COCO SSD MobileNet V2 quantized model
-    TEMP_ZIP="/tmp/coco_ssd_mobilenet.zip"
-    if curl -fsSL -o "$TEMP_ZIP" "https://storage.googleapis.com/download.tensorflow.org/models/tflite/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29.zip"; then
-        echo "Extracting model file..."
-        if unzip -q "$TEMP_ZIP" "detect.tflite" -d "$MODELS_DIR" && mv "$MODELS_DIR/detect.tflite" "$MODEL_FILE"; then
-            echo "✅ TFLite model downloaded and extracted successfully"
-            rm -f "$TEMP_ZIP"
+    # Try multiple model sources
+    MODEL_URLS=(
+        "https://storage.googleapis.com/download.tensorflow.org/models/tflite/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29.zip"
+        "https://github.com/tensorflow/models/raw/master/research/object_detection/testdata/tflite_graph.pb"
+    )
+    
+    MODEL_DOWNLOADED=false
+    for url in "${MODEL_URLS[@]}"; do
+        echo "Trying to download from: $url"
+        
+        if [[ "$url" == *.zip ]]; then
+            # Handle zip file
+            TEMP_ZIP="/tmp/coco_ssd_mobilenet.zip"
+            if curl -fsSL -o "$TEMP_ZIP" "$url"; then
+                echo "Extracting model file..."
+                if unzip -q "$TEMP_ZIP" "detect.tflite" -d "$MODELS_DIR" 2>/dev/null && mv "$MODELS_DIR/detect.tflite" "$MODEL_FILE" 2>/dev/null; then
+                    echo "✅ TFLite model downloaded and extracted successfully"
+                    rm -f "$TEMP_ZIP"
+                    MODEL_DOWNLOADED=true
+                    break
+                else
+                    echo "⚠️  Failed to extract from zip, trying different approach..."
+                    # Try to find any .tflite file in the zip
+                    if unzip -l "$TEMP_ZIP" | grep -q "\.tflite"; then
+                        unzip -j "$TEMP_ZIP" "*.tflite" -d "$MODELS_DIR" 2>/dev/null
+                        if ls "$MODELS_DIR"/*.tflite 1>/dev/null 2>&1; then
+                            mv "$MODELS_DIR"/*.tflite "$MODEL_FILE" 2>/dev/null
+                            echo "✅ TFLite model extracted successfully"
+                            rm -f "$TEMP_ZIP"
+                            MODEL_DOWNLOADED=true
+                            break
+                        fi
+                    fi
+                    rm -f "$TEMP_ZIP"
+                fi
+            fi
         else
-            echo "❌ Failed to extract model from zip"
-            rm -f "$TEMP_ZIP"
-            exit 1
+            # Handle direct file download
+            if curl -fsSL -o "$MODEL_FILE" "$url"; then
+                echo "✅ TFLite model downloaded successfully"
+                MODEL_DOWNLOADED=true
+                break
+            fi
         fi
-    else
-        echo "❌ Failed to download model"
-        echo "Please download the model manually and place it in $MODEL_FILE"
-        echo "You can find TFLite models at: https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md"
+    done
+    
+    if [ "$MODEL_DOWNLOADED" = false ]; then
+        echo "❌ Failed to download model from all sources"
+        echo ""
+        echo "Manual download instructions:"
+        echo "1. Visit: https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md"
+        echo "2. Download 'SSD MobileNet V2 320x320' or 'SSD MobileNet V2 FPNLite 320x320'"
+        echo "3. Extract and rename to: $MODEL_FILE"
+        echo ""
+        echo "Or use this command:"
+        echo "wget -O $MODEL_FILE 'https://storage.googleapis.com/download.tensorflow.org/models/tflite/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29.zip'"
+        echo "unzip -j $MODEL_FILE 'detect.tflite' && mv detect.tflite $MODEL_FILE"
         exit 1
     fi
 else
@@ -341,22 +382,31 @@ fi
 echo "Testing TFLite model..."
 MODEL_OK=false
 if [ -f "$MODEL_FILE" ]; then
-    if python -c "
+    # Check file size
+    FILE_SIZE=$(stat -c%s "$MODEL_FILE" 2>/dev/null || stat -f%z "$MODEL_FILE" 2>/dev/null || echo "0")
+    if [ "$FILE_SIZE" -lt 1000 ]; then
+        echo "❌ TFLite model file is too small ($FILE_SIZE bytes) - likely corrupted"
+    else
+        if python -c "
 import tflite_runtime.interpreter as tflite
 try:
     interpreter = tflite.Interpreter('$MODEL_FILE')
     interpreter.allocate_tensors()
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
     print('✅ TFLite model loaded successfully')
-    print('Input details:', interpreter.get_input_details())
-    print('Output details:', interpreter.get_output_details())
+    print(f'Model size: {len(open(\"$MODEL_FILE\", \"rb\").read())} bytes')
+    print(f'Input shape: {input_details[0][\"shape\"]}')
+    print(f'Output count: {len(output_details)}')
 except Exception as e:
     print('❌ TFLite model test failed:', e)
     exit(1)
 " 2>/dev/null; then
-        echo "✅ TFLite model test passed"
-        MODEL_OK=true
-    else
-        echo "❌ TFLite model test failed"
+            echo "✅ TFLite model test passed"
+            MODEL_OK=true
+        else
+            echo "❌ TFLite model test failed"
+        fi
     fi
 else
     echo "❌ TFLite model file not found"

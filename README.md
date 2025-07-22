@@ -6,7 +6,8 @@ A lightweight cat detection system for Raspberry Pi Zero 2 W with Camera Module 
 
 This project provides a simple cat detection system that:
 - Captures video from the Raspberry Pi Camera Module
-- Detects cats using an INT8 TFLite object detection model
+- Detects cats using an INT8 TFLite object detection model (replaces OpenCV Haar cascades)
+- Uses OpenCV for image processing and camera capture
 - Displays the live feed with detection results via a web interface
 
 ## Requirements
@@ -15,8 +16,8 @@ This project provides a simple cat detection system that:
 - Raspberry Pi Camera Module v2 (with imx219 sensor)
 - Raspberry Pi OS 64-bit (Bookworm or newer recommended)
 - libcamera-utils (for camera capture)
-- OpenCV (for image processing)
-- tflite-runtime (TensorFlow Lite runtime)
+- OpenCV (for image processing and camera capture)
+- tflite-runtime (TensorFlow Lite runtime for object detection)
 
 ## Installation
 
