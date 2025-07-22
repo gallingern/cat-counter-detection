@@ -34,6 +34,8 @@ class Camera:
         self.motion_detected = False
         self.last_frame_gray = None
         self.motion_threshold = config.MOTION_THRESHOLD
+        self.use_opencv_fallback = False
+        self.opencv_cap = None
         
         # Clean up any existing libcamera processes
         self._cleanup_existing_processes()
@@ -51,11 +53,26 @@ class Camera:
         except Exception as e:
             logger.warning(f"Could not cleanup processes: {e}")
     
+    def _test_libcamera(self):
+        """Test if libcamera-vid is working."""
+        try:
+            # Quick test of libcamera-vid
+            result = subprocess.run(['libcamera-vid', '--list-cameras'], 
+                                  capture_output=True, timeout=5)
+            return result.returncode == 0
+        except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+            return False
+    
     def start(self):
         """Start the camera capture thread."""
         if self.running:
             logger.warning("Camera is already running")
             return
+        
+        # Test libcamera first
+        if not self._test_libcamera():
+            logger.warning("libcamera-vid not working, using OpenCV fallback")
+            self.use_opencv_fallback = True
         
         # Clean up any existing processes before starting
         self._cleanup_existing_processes()
@@ -81,6 +98,11 @@ class Camera:
                 logger.error(f"Error stopping libcamera-vid process: {e}")
             finally:
                 self.process = None
+        
+        # Stop OpenCV capture
+        if self.opencv_cap:
+            self.opencv_cap.release()
+            self.opencv_cap = None
         
         # Clean up any remaining processes
         self._cleanup_existing_processes()
@@ -115,6 +137,90 @@ class Camera:
         return changed_pixels > self.motion_threshold
     
     def _capture_loop(self):
+        """Main capture loop that runs in a separate thread."""
+        if self.use_opencv_fallback:
+            self._opencv_capture_loop()
+        else:
+            self._libcamera_capture_loop()
+    
+    def _opencv_capture_loop(self):
+        """OpenCV fallback capture loop."""
+        try:
+            logger.info("Starting OpenCV camera capture loop...")
+            width, height = self.resolution
+            
+            # Initialize OpenCV camera
+            self.opencv_cap = cv2.VideoCapture(0)
+            if not self.opencv_cap.isOpened():
+                # Try other camera devices
+                for device in [1, 2, 3]:
+                    self.opencv_cap = cv2.VideoCapture(device)
+                    if self.opencv_cap.isOpened():
+                        logger.info(f"OpenCV camera opened on device {device}")
+                        break
+                
+                if not self.opencv_cap.isOpened():
+                    logger.error("Could not open any camera device with OpenCV")
+                    return
+            
+            # Set camera properties
+            self.opencv_cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            self.opencv_cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+            self.opencv_cap.set(cv2.CAP_PROP_FPS, self.framerate)
+            
+            frame_count = 0
+            skip_frames = 0
+            
+            while self.running:
+                try:
+                    ret, frame = self.opencv_cap.read()
+                    if not ret:
+                        logger.warning("OpenCV: Could not read frame")
+                        time.sleep(1)
+                        continue
+                    
+                    # Skip frames for efficiency
+                    skip_frames += 1
+                    if skip_frames % 4 != 0:
+                        continue
+                    
+                    frame_count += 1
+                    
+                    # Apply rotation if needed
+                    if self.rotation == 90:
+                        frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+                    elif self.rotation == 180:
+                        frame = cv2.rotate(frame, cv2.ROTATE_180)
+                    elif self.rotation == 270:
+                        frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                    
+                    # Detect motion (only every 5th frame for efficiency)
+                    if frame_count % 5 == 0:
+                        motion = self._detect_motion(frame)
+                        self.motion_detected = motion
+                    
+                    with self.lock:
+                        self.frame = frame.copy()
+                        self.last_frame_time = time.time()
+                    
+                    # Log motion detection occasionally
+                    if frame_count % 50 == 0 and self.motion_detected:
+                        logger.info(f"Motion detected at frame {frame_count}")
+                    
+                    # Sleep to control framerate
+                    time.sleep(1.0 / self.framerate)
+                    
+                except Exception as e:
+                    logger.error(f"OpenCV capture error: {e}")
+                    time.sleep(1)
+            
+        except Exception as e:
+            logger.error(f"OpenCV capture loop error: {e}")
+        finally:
+            if self.opencv_cap:
+                self.opencv_cap.release()
+    
+    def _libcamera_capture_loop(self):
         """Main capture loop that runs in a separate thread using libcamera-vid."""
         try:
             logger.info("Starting camera capture loop with libcamera-vid (ultra efficiency)...")
