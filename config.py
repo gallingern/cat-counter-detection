@@ -19,4 +19,4 @@ WEB_HOST = '0.0.0.0'  # Listen on all interfaces
 DEBUG_MODE = False
 
 # Paths
-CASCADE_PATH = '/usr/local/share/opencv4/haarcascades/haarcascade_frontalcatface.xml'
+MODEL_PATH = 'models/ssdlite_mobilenet_v2_int8.tflite'

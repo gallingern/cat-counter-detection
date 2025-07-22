@@ -36,6 +36,7 @@ if [ -d "venv" ]; then
         python3 -m venv venv
         source venv/bin/activate
     fi
+    pip install --upgrade tflite-runtime
 else
     echo "❌ Virtual environment not found - please run install.sh for full setup"
     exit 1

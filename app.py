@@ -11,11 +11,11 @@ import numpy as np
 try:
     from . import config
     from .camera import Camera
-    from .detector import CatDetector
+    from .tflite_detector import TFLiteDetector as Detector
 except ImportError:
     import config
     from camera import Camera
-    from detector import CatDetector
+    from tflite_detector import TFLiteDetector as Detector
 
 # Configure logging
 logging.basicConfig(
@@ -50,7 +50,7 @@ def initialize():
         camera.start()
         
         logger.info("Initializing detector...")
-        detector = CatDetector()
+        detector = Detector(config.MODEL_PATH, label_map={0: "background", 1: "cat"})
         
         logger.info("System initialized successfully")
         return True
