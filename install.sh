@@ -162,11 +162,68 @@ if ! grep -q "^dtoverlay=imx219" "$CONFIG_FILE"; then
     CAMERA_CHANGES=true
 fi
 
+# Add I2C support for camera communication
+if ! grep -q "^dtparam=i2c_arm=on" "$CONFIG_FILE"; then
+    sudo bash -c "echo 'dtparam=i2c_arm=on' >> $CONFIG_FILE"
+    echo "Added dtparam=i2c_arm=on"
+    CAMERA_CHANGES=true
+fi
+
+# Add DMA heap support for libcamera
+if ! grep -q "^dtoverlay=dma-heap" "$CONFIG_FILE"; then
+    sudo bash -c "echo 'dtoverlay=dma-heap' >> $CONFIG_FILE"
+    echo "Added dtoverlay=dma-heap"
+    CAMERA_CHANGES=true
+fi
+
 if [ "$CAMERA_CHANGES" = true ]; then
     echo "Camera module configuration updated. A reboot will be required."
     REBOOT_REQUIRED=true
 else
     echo "Camera module already properly configured."
+fi
+
+# Fix camera permissions BEFORE starting service
+echo "🔧 Fixing camera permissions..."
+sudo usermod -a -G video "$USER"
+
+# Create udev rules for camera permissions
+echo "📝 Creating udev rules for camera permissions..."
+sudo tee /etc/udev/rules.d/99-camera-permissions.rules > /dev/null << EOL
+# Set camera device permissions for video group
+SUBSYSTEM=="video4linux", GROUP="video", MODE="0666"
+EOL
+
+# Add udev rule for /dev/vcio
+echo "📝 Creating udev rule for vcio permissions..."
+sudo tee /etc/udev/rules.d/99-vcio.rules > /dev/null << EOL
+KERNEL=="vcio", MODE="0666"
+EOL
+
+# Add udev rule for /dev/dma_heap
+echo "📝 Creating udev rule for dma_heap permissions..."
+sudo tee /etc/udev/rules.d/99-dma_heap.rules > /dev/null << EOL
+SUBSYSTEM=="dma_heap", GROUP="video", MODE="0660"
+EOL
+
+# Apply udev rules immediately
+echo "🔧 Applying udev rules..."
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+
+# Set permissions on existing devices (if any)
+echo "🔧 Setting permissions on existing devices..."
+sudo chmod 666 /dev/video* 2>/dev/null || echo "Camera devices not found yet (will be set after reboot)"
+sudo chmod 666 /dev/vcio 2>/dev/null || echo "vcio device not found yet (will be set after reboot)"
+sudo chmod 666 /dev/dma_heap* 2>/dev/null || echo "dma_heap devices not found yet (will be set after reboot)"
+
+# Verify udev rules were created
+echo "🔍 Verifying udev rules..."
+if [ -f "/etc/udev/rules.d/99-camera-permissions.rules" ] && [ -f "/etc/udev/rules.d/99-vcio.rules" ] && [ -f "/etc/udev/rules.d/99-dma_heap.rules" ]; then
+    echo "✅ All udev rules created successfully"
+else
+    echo "❌ Failed to create some udev rules!"
+    exit 1
 fi
 
 # Create/update systemd service
@@ -209,24 +266,6 @@ chmod +x start_detection.py
 chmod +x update.sh
 chmod +x install.sh
 
-# Fix camera permissions
-echo "🔧 Fixing camera permissions..."
-sudo usermod -a -G video "$USER"
-
-# Create udev rule to automatically set camera permissions
-echo "📝 Creating udev rule for camera permissions..."
-sudo tee /etc/udev/rules.d/99-camera-permissions.rules > /dev/null << EOL
-# Set camera device permissions for video group
-SUBSYSTEM=="video4linux", GROUP="video", MODE="0666"
-EOL
-
-# Apply udev rules immediately
-sudo udevadm control --reload-rules
-sudo udevadm trigger
-
-# Also try to set permissions on existing devices (if any)
-sudo chmod 666 /dev/video* 2>/dev/null || echo "Camera devices not found yet (will be set after reboot)"
-
 # Test the installation
 echo "🧪 Testing installation..."
 
@@ -249,12 +288,28 @@ fi
 # Test camera access
 echo "Testing camera access..."
 CAMERA_OK=false
-if python -c "import cv2; cap = cv2.VideoCapture(0); print('Camera available:', cap.isOpened()); cap.release()" 2>/dev/null; then
-    echo "✅ Camera access confirmed via OpenCV"
-    CAMERA_OK=true
-else
-    echo "⚠️  Camera access test failed - check camera connection and permissions"
-    echo "   This is normal if camera settings were just updated and reboot is needed"
+
+# Test libcamera first (our primary camera system)
+if command -v libcamera-vid >/dev/null 2>&1; then
+    echo "Testing libcamera access..."
+    if timeout 10s libcamera-vid --list-cameras >/dev/null 2>&1; then
+        echo "✅ Camera access confirmed via libcamera"
+        CAMERA_OK=true
+    else
+        echo "⚠️  libcamera test failed - this may be normal after config changes"
+    fi
+fi
+
+# Fallback to OpenCV test
+if [ "$CAMERA_OK" = false ]; then
+    echo "Testing OpenCV camera access..."
+    if python -c "import cv2; cap = cv2.VideoCapture(0); print('Camera available:', cap.isOpened()); cap.release()" 2>/dev/null; then
+        echo "✅ Camera access confirmed via OpenCV"
+        CAMERA_OK=true
+    else
+        echo "⚠️  Camera access test failed - check camera connection and permissions"
+        echo "   This is normal if camera settings were just updated and reboot is needed"
+    fi
 fi
 
 # Check cascade file
@@ -305,39 +360,3 @@ if [ "$REBOOT_REQUIRED" = true ]; then
         echo "Please reboot manually when convenient."
     fi
 fi
-
-# Camera setup steps for IMX219 on Pi Zero 2 W
-
-# Add I2C support for camera communication
-if ! grep -q "^dtparam=i2c_arm=on" "$CONFIG_FILE"; then
-    sudo bash -c "echo 'dtparam=i2c_arm=on' >> $CONFIG_FILE"
-    echo "Added dtparam=i2c_arm=on"
-    CAMERA_CHANGES=true
-fi
-
-# Add DMA heap support for libcamera
-if ! grep -q "^dtoverlay=dma-heap" "$CONFIG_FILE"; then
-    sudo bash -c "echo 'dtoverlay=dma-heap' >> $CONFIG_FILE"
-    echo "Added dtoverlay=dma-heap"
-    CAMERA_CHANGES=true
-fi
-
-# Add udev rule for /dev/vcio
-echo "📝 Creating udev rule for vcio permissions..."
-sudo tee /etc/udev/rules.d/99-vcio.rules > /dev/null << EOL
-KERNEL=="vcio", MODE="0666"
-EOL
-
-# Add udev rule for /dev/dma_heap
-echo "📝 Creating udev rule for dma_heap permissions..."
-sudo tee /etc/udev/rules.d/99-dma_heap.rules > /dev/null << EOL
-SUBSYSTEM=="dma_heap", GROUP="video", MODE="0660"
-EOL
-
-# Apply udev rules immediately
-sudo udevadm control --reload-rules
-sudo udevadm trigger
-
-# Also try to set permissions on existing devices (if any)
-sudo chmod 666 /dev/vcio 2>/dev/null || echo "vcio device not found yet (will be set after reboot)"
-sudo chmod 666 /dev/dma_heap* 2>/dev/null || echo "dma_heap devices not found yet (will be set after reboot)"
