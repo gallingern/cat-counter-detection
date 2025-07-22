@@ -34,7 +34,7 @@ This project provides a simple cat detection system that:
 
    This will install libcamera-utils for camera capture, OpenCV for image processing, and tflite-runtime for inference.
 
-   Download the INT8 model from TensorFlow Model Zoo and place it in `models/ssdlite_mobilenet_v2_int8.tflite`.
+   The installer will automatically download a COCO-trained INT8 quantized model that can detect cats.
 3. The script will:
    - Install required dependencies
    - Set up a Python virtual environment
@@ -73,7 +73,7 @@ If you prefer to run the system manually:
 
 - **Camera not working**: Ensure the camera is properly connected and enabled (`raspi-config`)
 - **Web interface not accessible**: Check if the service is running (`systemctl status cat-detection`)
-- **Detection not working**: Ensure `ssdlite_mobilenet_v2_int8.tflite` is present in the models directory and tflite-runtime is installed
+- **Detection not working**: Ensure the TFLite model was downloaded successfully and tflite-runtime is installed
 
 ## License
 

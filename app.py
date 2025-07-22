@@ -50,7 +50,7 @@ def initialize():
         camera.start()
         
         logger.info("Initializing detector...")
-        detector = Detector(config.MODEL_PATH, label_map={0: "background", 1: "cat"})
+        detector = Detector(config.MODEL_PATH)
         
         logger.info("System initialized successfully")
         return True

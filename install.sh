@@ -67,6 +67,41 @@ else
     echo "📦 Skipping package installation (already installed)"
 fi
 
+# Create models directory and download TFLite model
+echo "📥 Setting up TFLite model..."
+MODELS_DIR="models"
+MODEL_FILE="$MODELS_DIR/ssdlite_mobilenet_v2_int8.tflite"
+
+if [ ! -d "$MODELS_DIR" ]; then
+    mkdir -p "$MODELS_DIR"
+fi
+
+if [ ! -f "$MODEL_FILE" ] || [ "$1" = "--force-reinstall" ]; then
+    echo "Downloading TFLite model..."
+    echo "Note: This will download a COCO-trained model that can detect cats (class 16)"
+    
+    # Download COCO SSD MobileNet V2 quantized model
+    TEMP_ZIP="/tmp/coco_ssd_mobilenet.zip"
+    if curl -fsSL -o "$TEMP_ZIP" "https://storage.googleapis.com/download.tensorflow.org/models/tflite/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29.zip"; then
+        echo "Extracting model file..."
+        if unzip -q "$TEMP_ZIP" "detect.tflite" -d "$MODELS_DIR" && mv "$MODELS_DIR/detect.tflite" "$MODEL_FILE"; then
+            echo "✅ TFLite model downloaded and extracted successfully"
+            rm -f "$TEMP_ZIP"
+        else
+            echo "❌ Failed to extract model from zip"
+            rm -f "$TEMP_ZIP"
+            exit 1
+        fi
+    else
+        echo "❌ Failed to download model"
+        echo "Please download the model manually and place it in $MODEL_FILE"
+        echo "You can find TFLite models at: https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md"
+        exit 1
+    fi
+else
+    echo "✅ TFLite model already present"
+fi
+
 # Create virtual environment
 echo "🐍 Creating Python virtual environment..."
 if [ -d "venv" ]; then
@@ -302,8 +337,33 @@ if [ "$CAMERA_OK" = false ]; then
     fi
 fi
 
+# Test TFLite model
+echo "Testing TFLite model..."
+MODEL_OK=false
+if [ -f "$MODEL_FILE" ]; then
+    if python -c "
+import tflite_runtime.interpreter as tflite
+try:
+    interpreter = tflite.Interpreter('$MODEL_FILE')
+    interpreter.allocate_tensors()
+    print('✅ TFLite model loaded successfully')
+    print('Input details:', interpreter.get_input_details())
+    print('Output details:', interpreter.get_output_details())
+except Exception as e:
+    print('❌ TFLite model test failed:', e)
+    exit(1)
+" 2>/dev/null; then
+        echo "✅ TFLite model test passed"
+        MODEL_OK=true
+    else
+        echo "❌ TFLite model test failed"
+    fi
+else
+    echo "❌ TFLite model file not found"
+fi
+
 # Overall test result
-if [ "$OPENCV_OK" = true ] && [ "$FLASK_OK" = true ] && [ "$TFLITE_OK" = true ]; then
+if [ "$OPENCV_OK" = true ] && [ "$FLASK_OK" = true ] && [ "$TFLITE_OK" = true ] && [ "$MODEL_OK" = true ]; then
     echo "✅ Core dependencies installed successfully"
     echo "✅ Installation test passed"
 
