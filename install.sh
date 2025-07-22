@@ -308,46 +308,36 @@ fi
 
 # Camera setup steps for IMX219 on Pi Zero 2 W
 
-# 1–4. Apply unified diff to /boot/firmware/config.txt
-sudo patch /boot/firmware/config.txt << 'EOF'
---- a/config.txt
-+++ b/config.txt
-@@
--dtoverlay=vc4-fkms-v3d
-+dtoverlay=vc4-kms-v3d
-@@
--#disable_fw_kms_setup=1
-+#disable_fw_kms_setup=1
-@@ [all]
--start_x=1
--dtoverlay=imx219
-+#start_x=1
-+#dtoverlay=imx219
-@@
--#dtparam=i2c_arm=on
-+dtparam=i2c_arm=on
-@@
-+# Tell the kernel there’s an IMX219 on I²C-1
-+dtoverlay=imx219
-@@ [all]
--gpu_mem=64
-+gpu_mem=128
-EOF
+# Add I2C support for camera communication
+if ! grep -q "^dtparam=i2c_arm=on" "$CONFIG_FILE"; then
+    sudo bash -c "echo 'dtparam=i2c_arm=on' >> $CONFIG_FILE"
+    echo "Added dtparam=i2c_arm=on"
+    CAMERA_CHANGES=true
+fi
 
-# 5. Add udev rule for /dev/vcio
-sudo tee /etc/udev/rules.d/99-vcio.rules << 'EOF'
+# Add DMA heap support for libcamera
+if ! grep -q "^dtoverlay=dma-heap" "$CONFIG_FILE"; then
+    sudo bash -c "echo 'dtoverlay=dma-heap' >> $CONFIG_FILE"
+    echo "Added dtoverlay=dma-heap"
+    CAMERA_CHANGES=true
+fi
+
+# Add udev rule for /dev/vcio
+echo "📝 Creating udev rule for vcio permissions..."
+sudo tee /etc/udev/rules.d/99-vcio.rules > /dev/null << EOL
 KERNEL=="vcio", MODE="0666"
-EOF
+EOL
 
-# 5. Add udev rule for /dev/dma_heap
-sudo tee /etc/udev/rules.d/99-dma_heap.rules << 'EOF'
+# Add udev rule for /dev/dma_heap
+echo "📝 Creating udev rule for dma_heap permissions..."
+sudo tee /etc/udev/rules.d/99-dma_heap.rules > /dev/null << EOL
 SUBSYSTEM=="dma_heap", GROUP="video", MODE="0660"
-EOF
+EOL
 
-# 5. Add 'pi' user to 'video' group
-sudo usermod -aG video pi
-
-# 6. Reload udev rules and reboot
+# Apply udev rules immediately
 sudo udevadm control --reload-rules
 sudo udevadm trigger
-sudo reboot
+
+# Also try to set permissions on existing devices (if any)
+sudo chmod 666 /dev/vcio 2>/dev/null || echo "vcio device not found yet (will be set after reboot)"
+sudo chmod 666 /dev/dma_heap* 2>/dev/null || echo "dma_heap devices not found yet (will be set after reboot)"
