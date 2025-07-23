@@ -198,7 +198,8 @@ CAMERA_CHANGES=false
 sudo sed -i 's/^start_x=1/#&/'    "$CONFIG_FILE" || true
 sudo sed -i 's/^dtoverlay=imx219/#&/' "$CONFIG_FILE" || true
 sudo sed -i 's/^disable_fw_kms_setup=1/#&/' "$CONFIG_FILE" || true
-echo "Disabled legacy camera firmware stack"
+sudo sed -i '/^dtoverlay=dma-heap/d' "$CONFIG_FILE" || true
+echo "Disabled legacy camera firmware stack and removed DMA heap overlay"
 
 if ! grep -q "^gpu_mem=128" "$CONFIG_FILE"; then
     sudo bash -c "echo 'gpu_mem=128' >> $CONFIG_FILE"
@@ -233,6 +234,11 @@ if ! grep -q "^dtoverlay=vc4-kms-v3d" "$CONFIG_FILE"; then
     echo "Added dtoverlay=vc4-kms-v3d"
     CAMERA_CHANGES=true
 fi
+
+# Clean up any duplicate entries
+echo "Cleaning up duplicate entries..."
+sudo sed -i '/^dtoverlay=imx219/{N;/^dtoverlay=imx219\n/!P;D}' "$CONFIG_FILE" || true
+sudo sed -i '/^dtoverlay=dma-heap/{N;/^dtoverlay=dma-heap\n/!P;D}' "$CONFIG_FILE" || true
 
 
 
