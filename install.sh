@@ -228,8 +228,12 @@ if ! grep -q "^dtparam=i2c_arm=on" "$CONFIG_FILE"; then
     CAMERA_CHANGES=true
 fi
 
-# Note: DMA heap overlay removed - it was causing issues and is not needed
-# The system will use the built-in DMA heap support instead
+# Add DMA heap support for libcamera
+if ! grep -q "^dtoverlay=dma-heap" "$CONFIG_FILE"; then
+    sudo bash -c "echo 'dtoverlay=dma-heap' >> $CONFIG_FILE"
+    echo "Added dtoverlay=dma-heap"
+    CAMERA_CHANGES=true
+fi
 
 if [ "$CAMERA_CHANGES" = true ]; then
     echo "Camera module configuration updated. A reboot will be required."
