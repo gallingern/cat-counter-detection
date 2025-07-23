@@ -194,12 +194,11 @@ fi
 echo "Using config file: $CONFIG_FILE"
 CAMERA_CHANGES=false
 
-# Add essential camera settings
-if ! grep -q "^start_x=1" "$CONFIG_FILE"; then
-    sudo bash -c "echo 'start_x=1' >> $CONFIG_FILE"
-    echo "Added start_x=1"
-    CAMERA_CHANGES=true
-fi
+# Disable legacy firmware camera stack
+sudo sed -i 's/^start_x=1/#&/'    "$CONFIG_FILE" || true
+sudo sed -i 's/^dtoverlay=imx219/#&/' "$CONFIG_FILE" || true
+sudo sed -i 's/^disable_fw_kms_setup=1/#&/' "$CONFIG_FILE" || true
+echo "Disabled legacy camera firmware stack"
 
 if ! grep -q "^gpu_mem=128" "$CONFIG_FILE"; then
     sudo bash -c "echo 'gpu_mem=128' >> $CONFIG_FILE"
@@ -228,12 +227,14 @@ if ! grep -q "^dtparam=i2c_arm=on" "$CONFIG_FILE"; then
     CAMERA_CHANGES=true
 fi
 
-# Add DMA heap support for libcamera
-if ! grep -q "^dtoverlay=dma-heap" "$CONFIG_FILE"; then
-    sudo bash -c "echo 'dtoverlay=dma-heap' >> $CONFIG_FILE"
-    echo "Added dtoverlay=dma-heap"
+# Add full-KMS VC4 driver if not present
+if ! grep -q "^dtoverlay=vc4-kms-v3d" "$CONFIG_FILE"; then
+    sudo bash -c "echo 'dtoverlay=vc4-kms-v3d' >> $CONFIG_FILE"
+    echo "Added dtoverlay=vc4-kms-v3d"
     CAMERA_CHANGES=true
 fi
+
+
 
 if [ "$CAMERA_CHANGES" = true ]; then
     echo "Camera module configuration updated. A reboot will be required."
