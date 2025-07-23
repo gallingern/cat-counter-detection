@@ -85,7 +85,7 @@ def process_frames():
             # Get a frame from the camera
             frame = camera.get_frame()
             if frame is None:
-                time.sleep(3.0)  # Very long sleep when no frame
+                time.sleep(1.0)  # Moderate sleep when no frame
                 continue
             
             # Get motion detection status
@@ -100,8 +100,8 @@ def process_frames():
             last_frame = frame
             last_annotated_frame = annotated_frame
             
-            # Sleep very long to reduce CPU usage (ultra efficiency)
-            time.sleep(3.0)
+            # Sleep moderately to reduce CPU usage while maintaining responsiveness
+            time.sleep(1.0)
             
         except Exception as e:
             logger.error(f"Error processing frame: {e}")

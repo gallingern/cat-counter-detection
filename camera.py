@@ -178,9 +178,9 @@ class Camera:
                             jpeg_data = frame_buffer[start:end]
                             frame_buffer = frame_buffer[end:]
                             
-                            # Skip most frames for ultra efficiency (process only every 4th frame)
+                            # Process most frames for better responsiveness (skip every 2nd frame)
                             skip_frames += 1
-                            if skip_frames % 4 != 0:
+                            if skip_frames % 2 != 0:
                                 continue
                             
                             # Decode JPEG to numpy array with ultra efficiency parameters
@@ -198,8 +198,8 @@ class Camera:
                                 elif self.rotation == 270:
                                     frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
                                 
-                                # Detect motion (only every 5th frame for ultra efficiency)
-                                if frame_count % 5 == 0:
+                                # Detect motion (every 3rd frame for better responsiveness)
+                                if frame_count % 3 == 0:
                                     motion = self._detect_motion(frame)
                                     self.motion_detected = motion
                                 
