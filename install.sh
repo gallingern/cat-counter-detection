@@ -235,10 +235,7 @@ if ! grep -q "^dtoverlay=vc4-kms-v3d" "$CONFIG_FILE"; then
     CAMERA_CHANGES=true
 fi
 
-# Clean up any duplicate entries
-echo "Cleaning up duplicate entries..."
-sudo sed -i '/^dtoverlay=imx219/{N;/^dtoverlay=imx219\n/!P;D}' "$CONFIG_FILE" || true
-sudo sed -i '/^dtoverlay=dma-heap/{N;/^dtoverlay=dma-heap\n/!P;D}' "$CONFIG_FILE" || true
+
 
 
 
