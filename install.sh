@@ -194,12 +194,17 @@ fi
 echo "Using config file: $CONFIG_FILE"
 CAMERA_CHANGES=false
 
-# Disable legacy firmware camera stack
-sudo sed -i 's/^start_x=1/#&/'    "$CONFIG_FILE" || true
-sudo sed -i 's/^dtoverlay=imx219/#&/' "$CONFIG_FILE" || true
-sudo sed -i 's/^disable_fw_kms_setup=1/#&/' "$CONFIG_FILE" || true
+# Configure camera for modern libcamera stack
+# Enable camera firmware (required for camera support)
+if ! grep -q "^start_x=1" "$CONFIG_FILE"; then
+    sudo bash -c "echo 'start_x=1' >> $CONFIG_FILE"
+    echo "Added start_x=1 (required for camera support)"
+    CAMERA_CHANGES=true
+fi
+
+# Remove legacy DMA heap overlay (not needed with modern stack)
 sudo sed -i '/^dtoverlay=dma-heap/d' "$CONFIG_FILE" || true
-echo "Disabled legacy camera firmware stack and removed DMA heap overlay"
+echo "Removed DMA heap overlay (not needed with modern stack)"
 
 if ! grep -q "^gpu_mem=128" "$CONFIG_FILE"; then
     sudo bash -c "echo 'gpu_mem=128' >> $CONFIG_FILE"
