@@ -36,16 +36,21 @@ if [ -d "venv" ]; then
         python3 -m venv venv
         source venv/bin/activate
     fi
+    pip install --upgrade tflite-runtime
 else
     echo "❌ Virtual environment not found - please run install.sh for full setup"
     exit 1
 fi
 
-# Stop service and processes
-echo "🔄 Stopping services and processes..."
+# Stop service and processes - AGGRESSIVE KILLING
+echo "🔄 Stopping services and processes (aggressive)..."
+sudo systemctl stop cat-detection 2>/dev/null || true
 sudo systemctl stop cat-detector 2>/dev/null || true
 sudo pkill -f "start_detection.py" 2>/dev/null || true
-sleep 2
+sudo pkill -f "python.*start_detection" 2>/dev/null || true
+sudo pkill -f "libcamera-vid" 2>/dev/null || true
+sudo pkill -f "cat-detection" 2>/dev/null || true
+sleep 3
 
 # Clear Python cache
 echo "🧹 Clearing Python cache..."
@@ -64,19 +69,19 @@ fi
 
 # Update systemd service
 echo "🔧 Updating systemd service..."
-sudo tee /etc/systemd/system/cat-detector.service > /dev/null << EOL
+sudo tee /etc/systemd/system/cat-detection.service > /dev/null << EOL
 [Unit]
-Description=Cat Detection Service
+Description=Simple Cat Detection Service
 After=network.target
 
 [Service]
-Type=simple
-User=pi
-WorkingDirectory=$(pwd)
-Environment=PATH=$(pwd)/venv/bin
 ExecStart=$(pwd)/venv/bin/python $(pwd)/start_detection.py
+WorkingDirectory=$(pwd)
+StandardOutput=inherit
+StandardError=inherit
 Restart=always
-RestartSec=10
+User=$USER
+Environment=PYTHONPATH=$(pwd)
 
 [Install]
 WantedBy=multi-user.target
@@ -85,27 +90,27 @@ EOL
 # Start service
 echo "🔄 Starting service..."
 sudo systemctl daemon-reload
-sudo systemctl enable cat-detector 2>/dev/null
-sudo systemctl start cat-detector
+sudo systemctl enable cat-detection 2>/dev/null
+sudo systemctl start cat-detection
 
 # Wait for service to start and check status
 echo "⏳ Waiting for service to start..."
 sleep 5
 
-if ! systemctl is-active --quiet cat-detector; then
+if ! systemctl is-active --quiet cat-detection; then
     echo "❌ Service failed to start"
-    sudo journalctl -u cat-detector -n 10 --no-pager
+    sudo journalctl -u cat-detection -n 10 --no-pager
     exit 1
 fi
 
 # Verify new code is loaded
 echo "🔍 Verifying new code..."
 sleep 3
-if sudo journalctl -u cat-detector -n 50 --no-pager | grep -q "Setting camera to native resolution"; then
-    echo "✅ New camera code loaded (native resolution set)"
-elif sudo journalctl -u cat-detector -n 50 --no-pager | grep -q "Starting camera capture loop"; then
+if sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "resolution (320, 240), framerate 2.0"; then
+    echo "✅ New camera code loaded (responsive settings)"
+elif sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Starting camera capture loop"; then
     echo "✅ New camera code loaded"
-elif sudo journalctl -u cat-detector -n 50 --no-pager | grep -q "Failed to read frame from camera"; then
+elif sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Failed to read frame from camera"; then
     echo "⚠️  Camera issues detected - check logs"
 else
     echo "ℹ️  Service started"
@@ -114,4 +119,4 @@ fi
 # Print completion message
 echo ""
 echo "=== Update Complete! ==="
-echo "Check logs: sudo journalctl -u cat-detector -f"
+echo "Check logs: sudo journalctl -u cat-detection -f"

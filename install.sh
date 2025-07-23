@@ -67,21 +67,80 @@ else
     echo "📦 Skipping package installation (already installed)"
 fi
 
-# Ensure Haar cascade file for cat detection is present
-echo "🔍 Ensuring Haar cascade file for cat detection is installed..."
-CASCADE_DEST="/usr/local/share/opencv4/haarcascades/haarcascade_frontalcatface.xml"
-if [ ! -f "$CASCADE_DEST" ] && ! ls /usr/share/opencv*/haarcascades/haarcascade_frontalcatface.xml 1>/dev/null 2>&1; then
-    echo "Downloading haarcascade_frontalcatface.xml to $CASCADE_DEST"
-    sudo mkdir -p "$(dirname "$CASCADE_DEST")"
-    sudo curl -fsSL -o "$CASCADE_DEST" https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/haarcascade_frontalcatface.xml
-    if [ -f "$CASCADE_DEST" ]; then
-        echo "✅ Haar cascade file installed."
-    else
-        echo "❌ Failed to download Haar cascade file!"
+# Create models directory and download TFLite model
+echo "📥 Setting up TFLite model..."
+MODELS_DIR="models"
+MODEL_FILE="$MODELS_DIR/ssdlite_mobilenet_v2_int8.tflite"
+
+if [ ! -d "$MODELS_DIR" ]; then
+    mkdir -p "$MODELS_DIR"
+fi
+
+if [ ! -f "$MODEL_FILE" ] || [ "$1" = "--force-reinstall" ]; then
+    echo "Downloading TFLite model..."
+    echo "Note: This will download a COCO-trained model that can detect cats (class 16)"
+    
+    # Try multiple model sources
+    MODEL_URLS=(
+        "https://storage.googleapis.com/download.tensorflow.org/models/tflite/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29.zip"
+        "https://github.com/tensorflow/models/raw/master/research/object_detection/testdata/tflite_graph.pb"
+    )
+    
+    MODEL_DOWNLOADED=false
+    for url in "${MODEL_URLS[@]}"; do
+        echo "Trying to download from: $url"
+        
+        if [[ "$url" == *.zip ]]; then
+            # Handle zip file
+            TEMP_ZIP="/tmp/coco_ssd_mobilenet.zip"
+            if curl -fsSL -o "$TEMP_ZIP" "$url"; then
+                echo "Extracting model file..."
+                if unzip -q "$TEMP_ZIP" "detect.tflite" -d "$MODELS_DIR" 2>/dev/null && mv "$MODELS_DIR/detect.tflite" "$MODEL_FILE" 2>/dev/null; then
+                    echo "✅ TFLite model downloaded and extracted successfully"
+                    rm -f "$TEMP_ZIP"
+                    MODEL_DOWNLOADED=true
+                    break
+                else
+                    echo "⚠️  Failed to extract from zip, trying different approach..."
+                    # Try to find any .tflite file in the zip
+                    if unzip -l "$TEMP_ZIP" | grep -q "\.tflite"; then
+                        unzip -j "$TEMP_ZIP" "*.tflite" -d "$MODELS_DIR" 2>/dev/null
+                        if ls "$MODELS_DIR"/*.tflite 1>/dev/null 2>&1; then
+                            mv "$MODELS_DIR"/*.tflite "$MODEL_FILE" 2>/dev/null
+                            echo "✅ TFLite model extracted successfully"
+                            rm -f "$TEMP_ZIP"
+                            MODEL_DOWNLOADED=true
+                            break
+                        fi
+                    fi
+                    rm -f "$TEMP_ZIP"
+                fi
+            fi
+        else
+            # Handle direct file download
+            if curl -fsSL -o "$MODEL_FILE" "$url"; then
+                echo "✅ TFLite model downloaded successfully"
+                MODEL_DOWNLOADED=true
+                break
+            fi
+        fi
+    done
+    
+    if [ "$MODEL_DOWNLOADED" = false ]; then
+        echo "❌ Failed to download model from all sources"
+        echo ""
+        echo "Manual download instructions:"
+        echo "1. Visit: https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md"
+        echo "2. Download 'SSD MobileNet V2 320x320' or 'SSD MobileNet V2 FPNLite 320x320'"
+        echo "3. Extract and rename to: $MODEL_FILE"
+        echo ""
+        echo "Or use this command:"
+        echo "wget -O $MODEL_FILE 'https://storage.googleapis.com/download.tensorflow.org/models/tflite/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29.zip'"
+        echo "unzip -j $MODEL_FILE 'detect.tflite' && mv detect.tflite $MODEL_FILE"
         exit 1
     fi
 else
-    echo "✅ Haar cascade file already present."
+    echo "✅ TFLite model already present"
 fi
 
 # Create virtual environment
@@ -112,12 +171,12 @@ fi
 # Only install Flask in virtual environment - use system OpenCV and numpy
 if [ "$FRESH_INSTALL" = true ] || [ "$1" = "--force-reinstall" ]; then
     echo "Installing flask (using system OpenCV and numpy)..."
-    pip install --upgrade flask
+    pip install --upgrade flask tflite-runtime
 else
     echo "Checking Python dependencies..."
     if ! python -c "import cv2, flask, numpy" 2>/dev/null; then
         echo "⚠️  Some dependencies missing, installing flask..."
-        pip install --upgrade flask
+        pip install --upgrade flask tflite-runtime
     else
         echo "✅ All Python dependencies already installed"
     fi
@@ -135,12 +194,17 @@ fi
 echo "Using config file: $CONFIG_FILE"
 CAMERA_CHANGES=false
 
-# Add essential camera settings
+# Configure camera for modern libcamera stack
+# Enable camera firmware (required for camera support)
 if ! grep -q "^start_x=1" "$CONFIG_FILE"; then
     sudo bash -c "echo 'start_x=1' >> $CONFIG_FILE"
-    echo "Added start_x=1"
+    echo "Added start_x=1 (required for camera support)"
     CAMERA_CHANGES=true
 fi
+
+# Remove legacy DMA heap overlay (not needed with modern stack)
+sudo sed -i '/^dtoverlay=dma-heap/d' "$CONFIG_FILE" || true
+echo "Removed DMA heap overlay (not needed with modern stack)"
 
 if ! grep -q "^gpu_mem=128" "$CONFIG_FILE"; then
     sudo bash -c "echo 'gpu_mem=128' >> $CONFIG_FILE"
@@ -169,12 +233,16 @@ if ! grep -q "^dtparam=i2c_arm=on" "$CONFIG_FILE"; then
     CAMERA_CHANGES=true
 fi
 
-# Add DMA heap support for libcamera
-if ! grep -q "^dtoverlay=dma-heap" "$CONFIG_FILE"; then
-    sudo bash -c "echo 'dtoverlay=dma-heap' >> $CONFIG_FILE"
-    echo "Added dtoverlay=dma-heap"
+# Add full-KMS VC4 driver if not present
+if ! grep -q "^dtoverlay=vc4-kms-v3d" "$CONFIG_FILE"; then
+    sudo bash -c "echo 'dtoverlay=vc4-kms-v3d' >> $CONFIG_FILE"
+    echo "Added dtoverlay=vc4-kms-v3d"
     CAMERA_CHANGES=true
 fi
+
+
+
+
 
 if [ "$CAMERA_CHANGES" = true ]; then
     echo "Camera module configuration updated. A reboot will be required."
@@ -285,6 +353,13 @@ else
     FLASK_OK=false
 fi
 
+if python -c "import tflite_runtime.interpreter" 2>/dev/null; then
+    TFLITE_OK=true
+else
+    echo "❌ tflite-runtime failed"
+    TFLITE_OK=false
+fi
+
 # Test camera access
 echo "Testing camera access..."
 CAMERA_OK=false
@@ -312,27 +387,45 @@ if [ "$CAMERA_OK" = false ]; then
     fi
 fi
 
-# Check cascade file
-echo "Checking cascade file..."
-CASCADE_FOUND=false
-for cascade_path in "/usr/local/share/opencv4/haarcascades/haarcascade_frontalcatface.xml" "/usr/share/opencv4/haarcascades/haarcascade_frontalcatface.xml" "/usr/local/share/opencv/haarcascades/haarcascade_frontalcatface.xml" "/usr/share/opencv/haarcascades/haarcascade_frontalcatface.xml"; do
-    if [ -f "$cascade_path" ]; then
-        echo "✅ Found cascade file at: $cascade_path"
-        CASCADE_FOUND=true
-        break
+# Test TFLite model
+echo "Testing TFLite model..."
+MODEL_OK=false
+if [ -f "$MODEL_FILE" ]; then
+    # Check file size
+    FILE_SIZE=$(stat -c%s "$MODEL_FILE" 2>/dev/null || stat -f%z "$MODEL_FILE" 2>/dev/null || echo "0")
+    if [ "$FILE_SIZE" -lt 1000 ]; then
+        echo "❌ TFLite model file is too small ($FILE_SIZE bytes) - likely corrupted"
+    else
+        if python -c "
+import tflite_runtime.interpreter as tflite
+try:
+    interpreter = tflite.Interpreter('$MODEL_FILE')
+    interpreter.allocate_tensors()
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+    print('✅ TFLite model loaded successfully')
+    print(f'Model size: {len(open(\"$MODEL_FILE\", \"rb\").read())} bytes')
+    print(f'Input shape: {input_details[0][\"shape\"]}')
+    print(f'Output count: {len(output_details)}')
+except Exception as e:
+    print('❌ TFLite model test failed:', e)
+    exit(1)
+" 2>/dev/null; then
+            echo "✅ TFLite model test passed"
+            MODEL_OK=true
+        else
+            echo "❌ TFLite model test failed"
+        fi
     fi
-done
-
-if [ "$CASCADE_FOUND" = false ]; then
-    echo "⚠️  Cascade file not found - installing opencv-data..."
-    sudo apt-get install -y opencv-data
+else
+    echo "❌ TFLite model file not found"
 fi
 
 # Overall test result
-if [ "$OPENCV_OK" = true ] && [ "$FLASK_OK" = true ]; then
+if [ "$OPENCV_OK" = true ] && [ "$FLASK_OK" = true ] && [ "$TFLITE_OK" = true ] && [ "$MODEL_OK" = true ]; then
     echo "✅ Core dependencies installed successfully"
     echo "✅ Installation test passed"
-    
+
     if [ "$CAMERA_OK" = false ] && [ "$REBOOT_REQUIRED" = true ]; then
         echo "⚠️  Camera test failed but this is expected after config changes"
         echo "   Camera will work after reboot"

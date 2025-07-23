@@ -11,11 +11,11 @@ import numpy as np
 try:
     from . import config
     from .camera import Camera
-    from .detector import CatDetector
+    from .tflite_detector import TFLiteDetector as Detector
 except ImportError:
     import config
     from camera import Camera
-    from detector import CatDetector
+    from tflite_detector import TFLiteDetector as Detector
 
 # Configure logging
 logging.basicConfig(
@@ -50,7 +50,7 @@ def initialize():
         camera.start()
         
         logger.info("Initializing detector...")
-        detector = CatDetector()
+        detector = Detector(config.MODEL_PATH)
         
         logger.info("System initialized successfully")
         return True
@@ -85,7 +85,7 @@ def process_frames():
             # Get a frame from the camera
             frame = camera.get_frame()
             if frame is None:
-                time.sleep(3.0)  # Very long sleep when no frame
+                time.sleep(1.0)  # Moderate sleep when no frame
                 continue
             
             # Get motion detection status
@@ -100,8 +100,8 @@ def process_frames():
             last_frame = frame
             last_annotated_frame = annotated_frame
             
-            # Sleep very long to reduce CPU usage (ultra efficiency)
-            time.sleep(3.0)
+            # Sleep moderately to reduce CPU usage while maintaining responsiveness
+            time.sleep(1.0)
             
         except Exception as e:
             logger.error(f"Error processing frame: {e}")

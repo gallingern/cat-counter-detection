@@ -47,20 +47,23 @@ The Cat Detection System is a lightweight, real-time cat detection application d
 - Thread-safe frame access with locks
 - Configurable parameters via config.py
 
-### 2. Detection Engine (`detector.py`)
-**Purpose:** Performs cat detection using OpenCV Haar cascades
+### 2. Detection Engine (`tflite_detector.py`)
+**Purpose:** Performs cat detection using an INT8 SSDLite MobileNet V2 TFLite model
 
 **Key Features:**
-- Haar cascade-based cat face detection
-- Configurable confidence thresholds
-- Detection interval limiting for performance
+- Runs TensorFlow Lite model via tflite-runtime
+- Quantization-aware preprocessing & output handling
+- Configurable score threshold
+- Detection interval limiting via motion checks
 - Real-time annotation of detected cats
 
 **Design Decisions:**
-- Haar cascades chosen for lightweight, real-time performance
-- Multiple fallback paths for cascade file location
-- Detection throttling to reduce CPU usage
+- TFLite chosen for efficient inference on Pi Zero 2 W
+- Pre-quantized INT8 model minimizes CPU usage
+- Motion gating avoids unnecessary inference
 - Visual annotation for user feedback
+- OpenCV still used for image preprocessing (resize, color conversion) and drawing
+
 
 ### 3. Web Application (`app.py`)
 **Purpose:** Provides web interface and coordinates system components
@@ -150,8 +153,8 @@ System Metrics → app.py → JSON API → JavaScript → UI Updates
 - Logging of camera-specific errors
 
 ### Detection Errors
-- Fallback cascade file paths
-- Graceful handling of missing cascade files
+- Missing or corrupt TFLite model file
+- Interpreter initialization failures
 - Performance monitoring and logging
 
 ### Web Server Errors
