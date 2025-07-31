@@ -251,16 +251,37 @@ sudo systemctl enable cat-detector
 echo "🧹 Cleaning up any existing PID files..."
 sudo rm -f /tmp/cat-detector.pid 2>/dev/null || true
 
-# Stop any existing service gracefully
+# Stop any existing service gracefully and ensure clean camera resource release
 if systemctl is-active --quiet cat-detector; then
     echo "Stopping existing service..."
     sudo systemctl stop cat-detector
-    sleep 2
+    sleep 3  # Give more time for camera resources to be released
+fi
+
+# Additional cleanup to ensure no lingering processes
+echo "Cleaning up any lingering processes..."
+sudo pkill -f "start_detector.py" 2>/dev/null || true
+sudo pkill -f "libcamera-vid" 2>/dev/null || true
+sleep 2  # Additional wait to ensure processes are fully terminated
+
+# Verify camera resource is available before starting service
+echo "🔍 Verifying camera resource availability..."
+if timeout 10s libcamera-vid --list-cameras >/dev/null 2>&1; then
+    echo "✅ Camera resource is available"
+else
+    echo "⚠️  Camera resource not available - this may be normal after config changes"
+    echo "   Service will start anyway and camera should work after a brief delay"
 fi
 
 # Start the service
 echo "Starting service..."
 sudo systemctl start cat-detector
+
+# Give the service time to initialize
+echo "⏳ Waiting for service to initialize..."
+sleep 5
+
+
 
 # Make scripts executable
 echo "🔧 Making scripts executable..."

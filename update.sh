@@ -69,6 +69,15 @@ sudo rm -f /tmp/cat-detector.pid 2>/dev/null || true
 
 sleep 3
 
+# Verify camera resource is available before starting service
+echo "🔍 Verifying camera resource availability..."
+if timeout 10s libcamera-vid --list-cameras >/dev/null 2>&1; then
+    echo "✅ Camera resource is available"
+else
+    echo "⚠️  Camera resource not available - this may be normal after config changes"
+    echo "   Service will start anyway and camera should work after a brief delay"
+fi
+
 # Clear Python cache
 echo "🧹 Clearing Python cache..."
 sudo find . -name "*.pyc" -delete 2>/dev/null || true
@@ -106,6 +115,10 @@ sudo rm -f /tmp/cat-detector.pid 2>/dev/null || true
 # Start the service
 sudo systemctl start cat-detector
 
+# Give the service time to initialize
+echo "⏳ Waiting for service to initialize..."
+sleep 5
+
 # Wait for service to start and check status
 echo "⏳ Waiting for service to start..."
 sleep 5
@@ -128,6 +141,8 @@ elif sudo journalctl -u cat-detector -n 50 --no-pager | grep -q "Failed to read 
 else
     echo "ℹ️  Service started"
 fi
+
+
 
 # Print completion message
 echo ""

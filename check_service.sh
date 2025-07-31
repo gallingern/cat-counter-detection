@@ -57,6 +57,8 @@ else
     echo "❌ Port 5000 is not in use"
 fi
 
+
+
 echo ""
 echo "📊 Recent Logs:"
 # Show recent service logs
