@@ -54,6 +54,22 @@ To update the system:
 
 This will pull the latest changes from the repository and restart the service.
 
+## Service Management
+
+The system runs as a systemd service with robust single-instance protection:
+
+- **Check service status**: `./check_service.sh`
+- **View logs**: `sudo journalctl -u cat-detector -f`
+- **Restart service**: `sudo systemctl restart cat-detector`
+- **Stop service**: `sudo systemctl stop cat-detector`
+- **Start service**: `sudo systemctl start cat-detector`
+
+The service includes multiple protection mechanisms to prevent multiple instances:
+- Systemd service management with proper start/stop handling
+- PID file management with atomic writes
+- Process cleanup on service restart
+- Signal handlers for graceful shutdown
+
 ## Manual Usage
 
 If you prefer to run the system manually:
@@ -75,6 +91,8 @@ If you prefer to run the system manually:
 - **Camera not working**: Ensure the camera is properly connected and enabled (`raspi-config`)
 - **Web interface not accessible**: Check if the service is running (`systemctl status cat-detector`)
 - **Detection not working**: Ensure the TFLite model was downloaded successfully and tflite-runtime is installed
+- **Multiple instances running**: Use `./check_service.sh` to diagnose and fix service issues
+- **Service won't start**: Check logs with `sudo journalctl -u cat-detector -f`
 
 ## License
 

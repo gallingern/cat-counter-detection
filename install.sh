@@ -310,14 +310,20 @@ echo "🔧 Enabling and starting service..."
 sudo systemctl daemon-reload
 sudo systemctl enable cat-detector
 
-# Only restart if service is already running
+# Clean up any existing PID files first
+echo "🧹 Cleaning up any existing PID files..."
+sudo rm -f /tmp/cat-detector.pid 2>/dev/null || true
+
+# Stop any existing service gracefully
 if systemctl is-active --quiet cat-detector; then
-    echo "Restarting existing service..."
-    sudo systemctl restart cat-detector
-else
-    echo "Starting new service..."
-    sudo systemctl start cat-detector
+    echo "Stopping existing service..."
+    sudo systemctl stop cat-detector
+    sleep 2
 fi
+
+# Start the service
+echo "Starting service..."
+sudo systemctl start cat-detector
 
 # Make scripts executable
 echo "🔧 Making scripts executable..."

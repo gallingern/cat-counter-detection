@@ -1,6 +1,8 @@
 [Unit]
 Description=Simple Cat Detector Service
 After=network.target
+# Prevent multiple instances
+Conflicts=cat-detector.service
 
 [Service]
 Type=simple
@@ -8,11 +10,26 @@ User=pi
 WorkingDirectory=/home/pi/cat-detector
 Environment=PATH=/home/pi/cat-detector/venv/bin
 ExecStart=/home/pi/cat-detector/venv/bin/python /home/pi/cat-detector/start_detection.py
+# Ensure proper cleanup
+ExecStop=/bin/rm -f /tmp/cat-detector.pid
+# Restart policy
 Restart=always
 RestartSec=10
+# Kill mode to ensure all child processes are terminated
 KillMode=mixed
+KillSignal=SIGTERM
+# Prevent restart on specific exit codes
 RestartPreventExitStatus=1
+# Timeout settings
 TimeoutStopSec=30
+TimeoutStartSec=60
+# Resource limits
+LimitNOFILE=65536
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/tmp /home/pi/cat-detector
 
 [Install]
 WantedBy=multi-user.target 

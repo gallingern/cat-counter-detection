@@ -42,10 +42,21 @@ else
     exit 1
 fi
 
-# Stop service and processes - AGGRESSIVE KILLING
-echo "🔄 Stopping services and processes (aggressive)..."
+# Stop service and processes - GRACEFUL FIRST, THEN AGGRESSIVE
+echo "🔄 Stopping services and processes..."
+# Try graceful stop first
 sudo systemctl stop cat-detector 2>/dev/null || true
-sudo systemctl stop cat-detector 2>/dev/null || true
+sleep 3
+
+# Check if service is still running and force kill if needed
+if systemctl is-active --quiet cat-detector; then
+    echo "Service still running, forcing stop..."
+    sudo systemctl kill cat-detector 2>/dev/null || true
+    sleep 2
+fi
+
+# Kill any remaining processes by name (aggressive cleanup)
+echo "Cleaning up any remaining processes..."
 sudo pkill -f "start_detection.py" 2>/dev/null || true
 sudo pkill -f "python.*start_detection" 2>/dev/null || true
 sudo pkill -f "libcamera-vid" 2>/dev/null || true
@@ -88,6 +99,11 @@ fi
 echo "🔄 Starting service..."
 sudo systemctl daemon-reload
 sudo systemctl enable cat-detector 2>/dev/null
+
+# Ensure no PID file exists before starting
+sudo rm -f /tmp/cat-detector.pid 2>/dev/null || true
+
+# Start the service
 sudo systemctl start cat-detector
 
 # Wait for service to start and check status

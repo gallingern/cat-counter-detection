@@ -7,6 +7,7 @@ import time
 import threading
 import os
 import sys
+import signal
 from flask import Flask, Response, render_template
 import cv2
 import numpy as np
@@ -43,18 +44,45 @@ processing = False
 start_time = None
 PID_FILE = '/tmp/cat-detector.pid'
 
+def signal_handler(signum, frame):
+    """Handle shutdown signals gracefully."""
+    logger.info(f"Received signal {signum}, shutting down gracefully...")
+    global processing
+    processing = False
+    cleanup()
+    remove_pid_file()
+    sys.exit(0)
+
+# Register signal handlers
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
+
 def check_pid_file():
     """Check if another instance is already running."""
     if os.path.exists(PID_FILE):
         try:
             with open(PID_FILE, 'r') as f:
-                pid = int(f.read().strip())
+                pid_content = f.read().strip()
+                if not pid_content:
+                    logger.warning("PID file is empty, removing it")
+                    os.remove(PID_FILE)
+                    return True
+                pid = int(pid_content)
+            
             # Check if process is actually running
             os.kill(pid, 0)  # This will raise OSError if process doesn't exist
-            logger.error(f"Another instance is already running (PID: {pid})")
-            return False
-        except (ValueError, OSError):
-            # PID file exists but process is dead, remove stale file
+            
+            # Process is running, check if it's our own process
+            if pid == os.getpid():
+                logger.info("PID file contains our own PID, continuing")
+                return True
+            else:
+                logger.error(f"Another instance is already running (PID: {pid})")
+                return False
+                
+        except (ValueError, OSError) as e:
+            # PID file exists but process is dead or invalid, remove stale file
+            logger.info(f"Removing stale PID file: {e}")
             try:
                 os.remove(PID_FILE)
             except OSError:
@@ -64,8 +92,12 @@ def check_pid_file():
 def create_pid_file():
     """Create PID file for this instance."""
     try:
-        with open(PID_FILE, 'w') as f:
+        # Use atomic write to prevent race conditions
+        temp_pid_file = PID_FILE + '.tmp'
+        with open(temp_pid_file, 'w') as f:
             f.write(str(os.getpid()))
+        os.rename(temp_pid_file, PID_FILE)
+        logger.info(f"Created PID file with PID {os.getpid()}")
         return True
     except Exception as e:
         logger.error(f"Failed to create PID file: {e}")
