@@ -5,6 +5,8 @@ Main application for the simple cat detection system.
 import logging
 import time
 import threading
+import os
+import sys
 from flask import Flask, Response, render_template
 import cv2
 import numpy as np
@@ -39,6 +41,43 @@ last_frame = None
 last_annotated_frame = None
 processing = False
 start_time = None
+PID_FILE = '/tmp/cat-detection.pid'
+
+def check_pid_file():
+    """Check if another instance is already running."""
+    if os.path.exists(PID_FILE):
+        try:
+            with open(PID_FILE, 'r') as f:
+                pid = int(f.read().strip())
+            # Check if process is actually running
+            os.kill(pid, 0)  # This will raise OSError if process doesn't exist
+            logger.error(f"Another instance is already running (PID: {pid})")
+            return False
+        except (ValueError, OSError):
+            # PID file exists but process is dead, remove stale file
+            try:
+                os.remove(PID_FILE)
+            except OSError:
+                pass
+    return True
+
+def create_pid_file():
+    """Create PID file for this instance."""
+    try:
+        with open(PID_FILE, 'w') as f:
+            f.write(str(os.getpid()))
+        return True
+    except Exception as e:
+        logger.error(f"Failed to create PID file: {e}")
+        return False
+
+def remove_pid_file():
+    """Remove PID file."""
+    try:
+        if os.path.exists(PID_FILE):
+            os.remove(PID_FILE)
+    except OSError:
+        pass
 
 def initialize():
     """Initialize the camera and detector."""
@@ -65,6 +104,9 @@ def cleanup():
     if camera:
         logger.info("Stopping camera...")
         camera.stop()
+    
+    # Remove PID file
+    remove_pid_file()
 
 def process_frames():
     """Process frames from the camera in a loop."""
@@ -164,10 +206,21 @@ def start_app():
     """Start the application."""
     global start_time
     
-    # Initialize the system
-    if not initialize():
-        logger.error("Failed to initialize system")
+    # Check if another instance is already running
+    if not check_pid_file():
+        logger.error("Another instance is already running. Exiting.")
         return False
+    
+    # Create PID file for this instance
+    if not create_pid_file():
+        logger.error("Failed to create PID file. Exiting.")
+        return False
+    
+    try:
+        # Initialize the system
+        if not initialize():
+            logger.error("Failed to initialize system")
+            return False
     
     # Start the frame processing thread
     start_time = time.time()
@@ -175,19 +228,41 @@ def start_app():
     processing_thread.daemon = True
     processing_thread.start()
     
-    try:
-        # Start the Flask app
-        logger.info(f"Starting web server on {config.WEB_HOST}:{config.WEB_PORT}")
-        app.run(host=config.WEB_HOST, port=config.WEB_PORT, debug=config.DEBUG_MODE, threaded=True)
-    except KeyboardInterrupt:
-        logger.info("Keyboard interrupt received, shutting down")
-    except Exception as e:
-        logger.error(f"Error running web server: {e}")
+    # Try to start the Flask app with retry logic
+    max_retries = 3
+    retry_delay = 5
+    
+    for attempt in range(max_retries):
+        try:
+            # Start the Flask app
+            logger.info(f"Starting web server on {config.WEB_HOST}:{config.WEB_PORT} (attempt {attempt + 1}/{max_retries})")
+            app.run(host=config.WEB_HOST, port=config.WEB_PORT, debug=config.DEBUG_MODE, threaded=True)
+            break  # Success, exit retry loop
+        except KeyboardInterrupt:
+            logger.info("Keyboard interrupt received, shutting down")
+            break
+        except OSError as e:
+            if "Address already in use" in str(e):
+                logger.error(f"Port {config.WEB_PORT} is already in use (attempt {attempt + 1}/{max_retries})")
+                if attempt < max_retries - 1:
+                    logger.info(f"Waiting {retry_delay} seconds before retry...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    logger.error("Max retries reached. Exiting.")
+                    return False
+            else:
+                logger.error(f"OSError running web server: {e}")
+                return False
+        except Exception as e:
+            logger.error(f"Error running web server: {e}")
+            return False
     finally:
         # Clean up
         global processing
         processing = False
         cleanup()
+        remove_pid_file()
     
     return True
 
