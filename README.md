@@ -35,7 +35,7 @@ This project provides a simple cat detector system that:
 
    This will install libcamera-utils for camera capture, OpenCV for image processing, and tflite-runtime for inference.
 
-   The installer will automatically download a COCO-trained INT8 quantized model that can detect cats.
+   The system includes a pre-trained COCO INT8 quantized model that can detect cats.
 3. The script will:
    - Install required dependencies
    - Set up a Python virtual environment
@@ -90,7 +90,7 @@ If you prefer to run the system manually:
 
 - **Camera not working**: Ensure the camera is properly connected and enabled (`raspi-config`)
 - **Web interface not accessible**: Check if the service is running (`systemctl status cat-detector`)
-- **Detector not working**: Ensure the TFLite model was downloaded successfully and tflite-runtime is installed
+- **Detector not working**: Ensure the TFLite model is present in the models directory and tflite-runtime is installed
 - **Multiple instances running**: Use `./check_service.sh` to diagnose and fix service issues
 - **Service won't start**: Check logs with `sudo journalctl -u cat-detector -f`
 
