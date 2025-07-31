@@ -294,25 +294,16 @@ else
     exit 1
 fi
 
-# Create/update systemd service
-echo "🔧 Creating/updating systemd service..."
-sudo tee /etc/systemd/system/cat-detection.service > /dev/null << EOL
-[Unit]
-Description=Simple Cat Detection Service
-After=network.target
-
-[Service]
-ExecStart=$(pwd)/venv/bin/python $(pwd)/start_detection.py
-WorkingDirectory=$(pwd)
-StandardOutput=inherit
-StandardError=inherit
-Restart=always
-User=$USER
-Environment=PYTHONPATH=$(pwd)
-
-[Install]
-WantedBy=multi-user.target
-EOL
+# Copy systemd service file
+echo "🔧 Installing systemd service..."
+if [ -f "cat-detector.service" ]; then
+    # Update the service file with correct paths
+    sed "s|/home/pi/cat-counter-detection|$(pwd)|g" cat-detector.service | sudo tee /etc/systemd/system/cat-detection.service > /dev/null
+    echo "✅ Service file installed from cat-detector.service"
+else
+    echo "❌ cat-detector.service file not found!"
+    exit 1
+fi
 
 # Enable and start the service
 echo "🔧 Enabling and starting service..."
