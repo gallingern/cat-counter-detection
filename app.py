@@ -253,6 +253,9 @@ def start_app():
         if not initialize():
             logger.error("Failed to initialize system")
             return False
+    except Exception as e:
+        logger.error(f"Error during initialization: {e}")
+        return False
     
     # Start the frame processing thread
     start_time = time.time()
@@ -289,12 +292,12 @@ def start_app():
         except Exception as e:
             logger.error(f"Error running web server: {e}")
             return False
-    finally:
-        # Clean up
-        global processing
-        processing = False
-        cleanup()
-        remove_pid_file()
+    
+    # Clean up
+    global processing
+    processing = False
+    cleanup()
+    remove_pid_file()
     
     return True
 
