@@ -93,6 +93,12 @@ If you prefer to run the system manually:
 - **Detector not working**: Ensure the TFLite model is present in the models directory and tflite-runtime is installed
 - **Multiple instances running**: Use `./check_service.sh` to diagnose and fix service issues
 - **Service won't start**: Check logs with `sudo journalctl -u cat-detector -f`
+- **Camera feed not displaying**: The service may be monopolizing camera resources. Try:
+  ```bash
+  sudo systemctl stop cat-detector
+  sudo pkill -f "libcamera-vid"
+  sudo systemctl start cat-detector
+  ```
 
 ## License
 
