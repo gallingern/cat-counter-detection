@@ -11,7 +11,7 @@ The Cat Detection System is a lightweight, real-time cat detection application d
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Camera Module │    │   Web Interface │    │  Detection      │
-│   (Hardware)    │    │   (Flask App)   │    │  (OpenCV)       │
+│   (Hardware)    │    │   (Flask App)   │    │  (TFLite)       │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          ▼                       ▼                       ▼
