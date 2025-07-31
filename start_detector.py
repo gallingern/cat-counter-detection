@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Entry point for the simple cat detection system.
+Entry point for the simple cat detector system.
 """
 
 from app import start_app

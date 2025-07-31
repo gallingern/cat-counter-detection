@@ -1,10 +1,10 @@
 # Simple Cat Detector System
 
-A lightweight cat detection system for Raspberry Pi Zero 2 W with Camera Module v2.
+A lightweight cat detector system for Raspberry Pi Zero 2 W with Camera Module v2.
 
 ## Overview
 
-This project provides a simple cat detection system that:
+This project provides a simple cat detector system that:
 - Captures video from the Raspberry Pi Camera Module
 - Detects cats using an INT8 TFLite object detection model (SSDLite MobileNet V2)
 - Uses libcamera for camera capture and OpenCV for image processing
@@ -79,9 +79,9 @@ If you prefer to run the system manually:
    source venv/bin/activate
    ```
 
-2. Run the detection script:
+2. Run the detector script:
    ```bash
-   python start_detection.py
+   python start_detector.py
    ```
 
 3. Access the web interface at `http://localhost:5000`
@@ -90,7 +90,7 @@ If you prefer to run the system manually:
 
 - **Camera not working**: Ensure the camera is properly connected and enabled (`raspi-config`)
 - **Web interface not accessible**: Check if the service is running (`systemctl status cat-detector`)
-- **Detection not working**: Ensure the TFLite model was downloaded successfully and tflite-runtime is installed
+- **Detector not working**: Ensure the TFLite model was downloaded successfully and tflite-runtime is installed
 - **Multiple instances running**: Use `./check_service.sh` to diagnose and fix service issues
 - **Service won't start**: Check logs with `sudo journalctl -u cat-detector -f`
 

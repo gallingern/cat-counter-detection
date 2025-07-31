@@ -327,7 +327,7 @@ sudo systemctl start cat-detector
 
 # Make scripts executable
 echo "🔧 Making scripts executable..."
-chmod +x start_detection.py
+chmod +x start_detector.py
 chmod +x update.sh
 chmod +x install.sh
 

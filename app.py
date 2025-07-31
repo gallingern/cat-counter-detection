@@ -1,5 +1,5 @@
 """
-Main application for the simple cat detection system.
+Main application for the simple cat detector system.
 """
 
 import logging

@@ -19,12 +19,12 @@ fi
 echo ""
 echo "🔍 Process Check:"
 # Check for running processes
-PROCESSES=$(pgrep -f "start_detection.py" 2>/dev/null || echo "")
+PROCESSES=$(pgrep -f "start_detector.py" 2>/dev/null || echo "")
 if [ -n "$PROCESSES" ]; then
     echo "✅ Found running processes:"
-    ps aux | grep "start_detection.py" | grep -v grep
+    ps aux | grep "start_detector.py" | grep -v grep
 else
-    echo "❌ No start_detection.py processes found"
+    echo "❌ No start_detector.py processes found"
 fi
 
 echo ""

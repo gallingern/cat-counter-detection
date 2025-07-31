@@ -1,5 +1,5 @@
 """
-Simple configuration for cat detection system.
+Simple configuration for cat detector system.
 Ultra-optimized for maximum efficiency on Raspberry Pi Zero 2 W with Camera Module v2.
 """
 

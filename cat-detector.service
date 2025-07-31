@@ -9,7 +9,7 @@ Type=simple
 User=pi
 WorkingDirectory=/home/pi/cat-detector
 Environment=PATH=/home/pi/cat-detector/venv/bin
-ExecStart=/home/pi/cat-detector/venv/bin/python /home/pi/cat-detector/start_detection.py
+ExecStart=/home/pi/cat-detector/venv/bin/python /home/pi/cat-detector/start_detector.py
 # Ensure proper cleanup
 ExecStop=/bin/rm -f /tmp/cat-detector.pid
 # Restart policy

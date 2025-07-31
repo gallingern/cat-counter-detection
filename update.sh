@@ -57,15 +57,15 @@ fi
 
 # Kill any remaining processes by name (aggressive cleanup)
 echo "Cleaning up any remaining processes..."
-sudo pkill -f "start_detection.py" 2>/dev/null || true
-sudo pkill -f "python.*start_detection" 2>/dev/null || true
+sudo pkill -f "start_detector.py" 2>/dev/null || true
+sudo pkill -f "python.*start_detector" 2>/dev/null || true
 sudo pkill -f "libcamera-vid" 2>/dev/null || true
 sudo pkill -f "cat-detector" 2>/dev/null || true
 
 # Clean up PID files
 echo "🧹 Cleaning up PID files..."
 sudo rm -f /tmp/cat-detector.pid 2>/dev/null || true
-sudo rm -f /tmp/cat-detection.pid 2>/dev/null || true
+sudo rm -f /tmp/cat-detector.pid 2>/dev/null || true
 
 sleep 3
 
