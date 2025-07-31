@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Simple Cat Detection System Update Script
+# Simple Cat Detector System Update Script
 # 
 # This script performs quick updates after git pull.
 # For full installation, use install.sh instead.
 
-echo "=== Simple Cat Detection System Update ==="
+echo "=== Simple Cat Detector System Update ==="
 
 # Check if git repository exists
 if [ ! -d ".git" ]; then
@@ -44,12 +44,18 @@ fi
 
 # Stop service and processes - AGGRESSIVE KILLING
 echo "🔄 Stopping services and processes (aggressive)..."
-sudo systemctl stop cat-detection 2>/dev/null || true
+sudo systemctl stop cat-detector 2>/dev/null || true
 sudo systemctl stop cat-detector 2>/dev/null || true
 sudo pkill -f "start_detection.py" 2>/dev/null || true
 sudo pkill -f "python.*start_detection" 2>/dev/null || true
 sudo pkill -f "libcamera-vid" 2>/dev/null || true
-sudo pkill -f "cat-detection" 2>/dev/null || true
+sudo pkill -f "cat-detector" 2>/dev/null || true
+
+# Clean up PID files
+echo "🧹 Cleaning up PID files..."
+sudo rm -f /tmp/cat-detector.pid 2>/dev/null || true
+sudo rm -f /tmp/cat-detection.pid 2>/dev/null || true
+
 sleep 3
 
 # Clear Python cache
@@ -71,7 +77,7 @@ fi
 echo "🔧 Updating systemd service..."
 if [ -f "cat-detector.service" ]; then
     # Update the service file with correct paths
-    sed "s|/home/pi/cat-counter-detection|$(pwd)|g" cat-detector.service | sudo tee /etc/systemd/system/cat-detection.service > /dev/null
+    sed "s|/home/pi/cat-detector|$(pwd)|g" cat-detector.service | sudo tee /etc/systemd/system/cat-detector.service > /dev/null
     echo "✅ Service file updated from cat-detector.service"
 else
     echo "❌ cat-detector.service file not found!"
@@ -81,27 +87,27 @@ fi
 # Start service
 echo "🔄 Starting service..."
 sudo systemctl daemon-reload
-sudo systemctl enable cat-detection 2>/dev/null
-sudo systemctl start cat-detection
+sudo systemctl enable cat-detector 2>/dev/null
+sudo systemctl start cat-detector
 
 # Wait for service to start and check status
 echo "⏳ Waiting for service to start..."
 sleep 5
 
-if ! systemctl is-active --quiet cat-detection; then
+if ! systemctl is-active --quiet cat-detector; then
     echo "❌ Service failed to start"
-    sudo journalctl -u cat-detection -n 10 --no-pager
+    sudo journalctl -u cat-detector -n 10 --no-pager
     exit 1
 fi
 
 # Verify new code is loaded
 echo "🔍 Verifying new code..."
 sleep 3
-if sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "resolution (320, 240), framerate 2.0"; then
+if sudo journalctl -u cat-detector -n 50 --no-pager | grep -q "resolution (320, 240), framerate 2.0"; then
     echo "✅ New camera code loaded (responsive settings)"
-elif sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Starting camera capture loop"; then
+elif sudo journalctl -u cat-detector -n 50 --no-pager | grep -q "Starting camera capture loop"; then
     echo "✅ New camera code loaded"
-elif sudo journalctl -u cat-detection -n 50 --no-pager | grep -q "Failed to read frame from camera"; then
+elif sudo journalctl -u cat-detector -n 50 --no-pager | grep -q "Failed to read frame from camera"; then
     echo "⚠️  Camera issues detected - check logs"
 else
     echo "ℹ️  Service started"
@@ -110,4 +116,4 @@ fi
 # Print completion message
 echo ""
 echo "=== Update Complete! ==="
-echo "Check logs: sudo journalctl -u cat-detection -f"
+echo "Check logs: sudo journalctl -u cat-detector -f"

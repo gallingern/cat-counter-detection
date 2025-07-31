@@ -3,12 +3,12 @@
 
 set -e
 
-# Simple Cat Detection System Installation Script
+# Simple Cat Detector System Installation Script
 # For Raspberry Pi Zero 2 W with Camera Module v2
 #
 # This script performs a complete fresh installation and setup.
 
-echo "=== Simple Cat Detection System Installation ==="
+echo "=== Simple Cat Detector System Installation ==="
 echo "This script will install the necessary dependencies and set up the system."
 echo ""
 
@@ -44,7 +44,7 @@ fi
 # Check if this is a fresh install or update
 FRESH_INSTALL=false
 REBOOT_REQUIRED=false
-if [ ! -d "venv" ] || [ ! -f "/etc/systemd/system/cat-detection.service" ]; then
+if [ ! -d "venv" ] || [ ! -f "/etc/systemd/system/cat-detector.service" ]; then
     FRESH_INSTALL=true
     echo "🆕 Fresh installation detected"
 else
@@ -298,7 +298,7 @@ fi
 echo "🔧 Installing systemd service..."
 if [ -f "cat-detector.service" ]; then
     # Update the service file with correct paths
-    sed "s|/home/pi/cat-counter-detection|$(pwd)|g" cat-detector.service | sudo tee /etc/systemd/system/cat-detection.service > /dev/null
+    sed "s|/home/pi/cat-detector|$(pwd)|g" cat-detector.service | sudo tee /etc/systemd/system/cat-detector.service > /dev/null
     echo "✅ Service file installed from cat-detector.service"
 else
     echo "❌ cat-detector.service file not found!"
@@ -308,15 +308,15 @@ fi
 # Enable and start the service
 echo "🔧 Enabling and starting service..."
 sudo systemctl daemon-reload
-sudo systemctl enable cat-detection
+sudo systemctl enable cat-detector
 
 # Only restart if service is already running
-if systemctl is-active --quiet cat-detection; then
+if systemctl is-active --quiet cat-detector; then
     echo "Restarting existing service..."
-    sudo systemctl restart cat-detection
+    sudo systemctl restart cat-detector
 else
     echo "Starting new service..."
-    sudo systemctl start cat-detection
+    sudo systemctl start cat-detector
 fi
 
 # Make scripts executable
@@ -430,7 +430,7 @@ fi
 echo ""
 echo "=== Installation Complete! ==="
 IP_ADDRESS=$(hostname -I | awk '{print $1}')
-echo "The cat detection system is now running."
+echo "The cat detector system is now running."
 echo "You can access the web interface at: http://$IP_ADDRESS:5000"
 echo ""
 

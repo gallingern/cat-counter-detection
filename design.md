@@ -1,8 +1,8 @@
-# Cat Detection System - Design Document
+# Cat Detector System - Design Document
 
 ## Overview
 
-The Cat Detection System is a lightweight, real-time cat detection application designed for Raspberry Pi Zero 2 W with Camera Module v2. It provides a web-based interface for monitoring and detecting cats in a live video stream.
+The Cat Detector System is a lightweight, real-time cat detection application designed for Raspberry Pi Zero 2 W with Camera Module v2. It provides a web-based interface for monitoring and detecting cats in a live video stream.
 
 ## Architecture
 

@@ -1,4 +1,4 @@
-# Simple Cat Detection System
+# Simple Cat Detector System
 
 A lightweight cat detection system for Raspberry Pi Zero 2 W with Camera Module v2.
 
@@ -23,8 +23,8 @@ This project provides a simple cat detection system that:
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/simple-cat-detection.git
-   cd simple-cat-detection
+   git clone https://github.com/gallingern/cat-detector.git
+   cd cat-detector
    ```
 
 2. Run the installation script:
@@ -73,7 +73,7 @@ If you prefer to run the system manually:
 ## Troubleshooting
 
 - **Camera not working**: Ensure the camera is properly connected and enabled (`raspi-config`)
-- **Web interface not accessible**: Check if the service is running (`systemctl status cat-detection`)
+- **Web interface not accessible**: Check if the service is running (`systemctl status cat-detector`)
 - **Detection not working**: Ensure the TFLite model was downloaded successfully and tflite-runtime is installed
 
 ## License

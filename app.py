@@ -41,7 +41,7 @@ last_frame = None
 last_annotated_frame = None
 processing = False
 start_time = None
-PID_FILE = '/tmp/cat-detection.pid'
+PID_FILE = '/tmp/cat-detector.pid'
 
 def check_pid_file():
     """Check if another instance is already running."""

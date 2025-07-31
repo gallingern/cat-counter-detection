@@ -1,13 +1,13 @@
 [Unit]
-Description=Cat Detection Service
+Description=Simple Cat Detector Service
 After=network.target
 
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/home/pi/cat-counter-detection
-Environment=PATH=/home/pi/cat-counter-detection/venv/bin
-ExecStart=/home/pi/cat-counter-detection/venv/bin/python /home/pi/cat-counter-detection/start_detection.py
+WorkingDirectory=/home/pi/cat-detector
+Environment=PATH=/home/pi/cat-detector/venv/bin
+ExecStart=/home/pi/cat-detector/venv/bin/python /home/pi/cat-detector/start_detection.py
 Restart=always
 RestartSec=10
 KillMode=mixed
